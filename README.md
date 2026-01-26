@@ -239,9 +239,6 @@ We welcome contributions! Please follow these steps:
 - Use HTTPS or localhost
 - Check browser compatibility
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
