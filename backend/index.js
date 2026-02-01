@@ -6,7 +6,7 @@ const userRoutes = require('./routes/userRoutes');
 const listingRoutes = require('./routes/listingRoutes');
 
 // Load environment variables from the root .env file
-dotenv.config({ path: '../.env' });
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
