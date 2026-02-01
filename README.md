@@ -1,6 +1,8 @@
 ## Project Setup
 
-This project consists of a React frontend and an Express/MongoDB backend.
+This project is organized into two separate directories:
+- `frontend/`: React application (Vite)
+- `backend/`: Node.js/Express server
 
 ### Prerequisites
 
@@ -9,32 +11,32 @@ This project consists of a React frontend and an Express/MongoDB backend.
 
 ### Installation
 
-1.  **Install Root Dependencies (Frontend)**
+1.  **Frontend Setup**
     ```bash
+    cd frontend
     npm install
     ```
 
-2.  **Install Server Dependencies (Backend)**
+2.  **Backend Setup**
     ```bash
-    cd server
+    cd backend
     npm install
-    cd ..
     ```
 
 ### Environment Configuration
 
-Create a `.env` file in the root directory with the following variables:
+Both the `frontend` and `backend` directories have their own `.env` configuration.
 
+**Frontend (`frontend/.env`)**:
 ```env
-# Frontend
 GEMINI_API_KEY=your_gemini_api_key_here
+```
 
-# Backend
+**Backend (`backend/.env`)**:
+```env
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
 ```
-
-> **Note:** The backend is configured to read the `.env` file from the root directory.
 
 ### Running the Application
 
@@ -42,17 +44,18 @@ You need to run both the backend and frontend terminals.
 
 **1. Start the Backend Server**
 
-From the root directory:
+Open a terminal and navigate to the `backend` directory:
 ```bash
-npm run server
+cd backend
+npm run dev
 ```
-*Alternatively, you can go into the `server` folder and run `npm run dev`.*
 The server will start on `http://localhost:5000`.
 
 **2. Start the Frontend**
 
-From the root directory (open a new terminal):
+Open a new terminal and navigate to the `frontend` directory:
 ```bash
+cd frontend
 npm run dev
 ```
 The frontend will start on the URL provided by Vite (typically `http://localhost:5173`).
@@ -155,7 +158,7 @@ graph TD
 ### 2. Backend (Server)
 - **Runtime**: Node.js.
 - **Framework**: Express.js.
-- **Main Entry**: `server/index.js`.
+- **Main Entry**: `backend/index.js`.
 - **API Routes**:
     - `POST /api/users/login`: Handles user authentication and creation.
     - `GET/POST /api/listings`: Manages crop listings (CRUD).
@@ -175,4 +178,3 @@ graph TD
     - Real-time Audio Streaming (Gemini Live).
     - Structured Market Data Generation (JSON Mode).
     - Multi-modal interaction.
-
