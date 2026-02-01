@@ -1,4 +1,4 @@
-export type Language = 'hi' | 'en' | 'mr' | 'te' | 'ta';
+export type Language = 'hi' | 'en' | 'mr' | 'te' | 'ta' | 'bn';
 
 export interface User {
   id: string;
@@ -14,6 +14,7 @@ export interface CropListing {
   farmerId: string;
   farmerName: string;
   cropName: string;
+  cropNameEnglish?: string; // Standardized English name for search
   quantity: number; // in kg
   price: number; // per kg
   location: string;

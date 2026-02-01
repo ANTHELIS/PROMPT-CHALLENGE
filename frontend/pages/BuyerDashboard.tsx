@@ -18,7 +18,16 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
     const [selectedListing, setSelectedListing] = useState<CropListing | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
+    // State for advanced filters
+    const [activeFilters, setActiveFilters] = useState({
+        query: '',
+        location: '',
+        farmerName: '',
+        minPrice: 0,
+        maxPrice: Infinity,
+        timeFilter: 'all' as 'all' | 'newest' | 'today' | 'week'
+    });
+
     const [showProfile, setShowProfile] = useState(false);
     const [profileData, setProfileData] = useState({ name: '' });
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
@@ -48,41 +57,46 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
     const tools: FunctionDeclaration[] = [
         {
             name: "search_market",
-            description: "Search/Filter the marketplace for crops. IMPORTANT: The database uses English/Latin script. Always translate the query to English (e.g. if user says 'Kanda' or 'Pyaaz', pass 'Onion' or 'Pyaz').",
+            description: "Search and filter the marketplace. Use this for ANY search query. You can filter by crop name, location, farmer, price range, and time (recency).",
             parameters: {
                 type: Type.OBJECT,
                 properties: {
-                    query: { type: Type.STRING, description: "Crop name in English/Latin script" }
+                    query: { type: Type.STRING, description: "Crop name in English (e.g. Onion, Wheat)" },
+                    location: { type: Type.STRING, description: "Filter by location (e.g. Nashik)" },
+                    farmerName: { type: Type.STRING, description: "Filter by farmer name" },
+                    minPrice: { type: Type.NUMBER, description: "Minimum price" },
+                    maxPrice: { type: Type.NUMBER, description: "Maximum price" },
+                    time: { type: Type.STRING, enum: ["newest", "today", "week", "all"], description: "Time filter: 'newest' (sorted), 'today' (last 24h), 'week' (last 7 days), 'all'." }
                 },
-                required: ["query"]
+                required: []
             }
         },
         {
             name: "clear_search",
-            description: "Clear the search filter to show all crops.",
+            description: "Clear all filters and show all crops.",
             parameters: { type: Type.OBJECT, properties: {} }
         },
         {
             name: "contact_seller",
-            description: "Start negotiating with a farmer. You can filter by name, crop, location, or price. If multiple criteria are given, it filters by all of them.",
+            description: "Start negotiating with a farmer. Use this ONLY when the user explicitly wants to MESSAGE or TALK to a specific seller.",
             parameters: {
                 type: Type.OBJECT,
                 properties: {
-                    farmerName: { type: Type.STRING, description: "Name of the farmer (partial match)" },
-                    cropName: { type: Type.STRING, description: "Name of the crop" },
-                    location: { type: Type.STRING, description: "Location to filter by" },
-                    price: { type: Type.NUMBER, description: "Specific price to look for" }
+                    farmerName: { type: Type.STRING, description: "Name of the farmer (exact match from list preferred)" },
+                    cropName: { type: Type.STRING, description: "Crop name to further identify the seller" },
+                    location: { type: Type.STRING, description: "Location of the seller" },
+                    price: { type: Type.NUMBER, description: "Price of the crop" }
                 },
                 required: []
             }
         },
         {
             name: "sort_market",
-            description: "Sort the marketplace listings. Use this to find 'best price' (lowest).",
+            description: "Sort the marketplace listings.",
             parameters: {
                 type: Type.OBJECT,
                 properties: {
-                    sortBy: { type: Type.STRING, enum: ["price_asc", "price_desc"], description: "Sort order: 'price_asc' for lowest/best price, 'price_desc' for highest." }
+                    sortBy: { type: Type.STRING, enum: ["price_asc", "price_desc"], description: "Sort order" }
                 },
                 required: ["sortBy"]
             }
@@ -114,12 +128,33 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
         console.log("Buyer Tool:", name, args);
 
         if (name === "search_market") {
-            setSearchQuery(args.query);
-            return `Filtered market for ${args.query}`;
+            setActiveFilters({
+                query: args.query || '',
+                location: args.location || '',
+                farmerName: args.farmerName || '',
+                minPrice: args.minPrice || 0,
+                maxPrice: args.maxPrice || Infinity,
+                timeFilter: args.time || 'all'
+            });
+
+            if (args.time === 'newest') setSortOrder(null); // time sorting handled in filter logic usually or just rely on default? Default is usually newest first.
+
+            let response = "Filtered market";
+            if (args.query) response += ` for ${args.query}`;
+            if (args.location) response += ` in ${args.location}`;
+            if (args.time) response += ` time: ${args.time}`;
+            return response;
         }
 
         if (name === "clear_search") {
-            setSearchQuery('');
+            setActiveFilters({
+                query: '',
+                location: '',
+                farmerName: '',
+                minPrice: 0,
+                maxPrice: Infinity,
+                timeFilter: 'all'
+            });
             return "Showing all listings.";
         }
 
@@ -128,10 +163,26 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
 
             // Apply Filters
             if (args.farmerName) {
-                candidates = candidates.filter(l => l.farmerName.toLowerCase().includes(args.farmerName.toLowerCase()));
+                // First try strict/partial match
+                const nameQuery = args.farmerName.toLowerCase();
+                let matches = candidates.filter(l => l.farmerName.toLowerCase().includes(nameQuery));
+
+                // If no name match, check if the assistant passed a "Localized Name" but our DB has English?
+                // Or if the user meant a specific person from the VISIBLE list which might account for transcripts.
+                if (matches.length === 0) {
+                    // Fallback: If the user said a name that seems like a first name
+                    // and we have it in our cache/list?
+                    // For now, rely on "Partial" match.
+                } else {
+                    candidates = matches;
+                }
             }
             if (args.cropName) {
-                candidates = candidates.filter(l => l.cropName.toLowerCase().includes(args.cropName.toLowerCase()));
+                const q = args.cropName.toLowerCase();
+                candidates = candidates.filter(l =>
+                    l.cropName.toLowerCase().includes(q) ||
+                    l.cropNameEnglish?.toLowerCase().includes(q)
+                );
             }
             if (args.location) {
                 candidates = candidates.filter(l => l.location.toLowerCase().includes(args.location.toLowerCase()));
@@ -140,22 +191,45 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
                 candidates = candidates.filter(l => l.price === Number(args.price));
             }
 
-            if (candidates.length === 0) return "No matching sellers found.";
+            // AUTO-SELECT Logic for "Message him/that seller" context where assistant passes no name
+            // If the filter resulted in exactly 1 candidate (or very few), assume that's the intent.
+            // But we need to be careful. If no args provided, candidates = ALL listings.
+            const hasArgs = args.farmerName || args.cropName || args.location || args.price;
+
+            // If explicit name failed, return appropriate error.
+            if (args.farmerName && candidates.length === 0) {
+                return `I couldn't find a farmer named '${args.farmerName}'. Please try the name from the list.`;
+            }
+
+            if (candidates.length === 0) return "No matching sellers found to contact.";
 
             // Sort by price (Best Price First)
             candidates.sort((a, b) => a.price - b.price);
             const best = candidates[0];
 
+            // If a specific name provided -> Open Chat directly
+            if (args.farmerName && candidates.length > 0) {
+                setSelectedListing(candidates[0]);
+                return `Opened chat with ${candidates[0].farmerName}.`;
+            }
+
+            // If we have a SINGLE result from a specific query (e.g. "Message the Onion seller in Nashik")
+            if (hasArgs && candidates.length === 1) {
+                setSelectedListing(candidates[0]);
+                return `Opened chat with ${candidates[0].farmerName}.`;
+            }
+
             // Safety Check: If Name is NOT provided, require confirmation by showing list instead of messaging.
             if (!args.farmerName) {
                 // Update UI to show these results
-                if (args.location) setSearchQuery(args.location);
-                else if (args.cropName) setSearchQuery(args.cropName);
+                if (args.location) setActiveFilters(prev => ({ ...prev, location: args.location }));
+                else if (args.cropName) setActiveFilters(prev => ({ ...prev, query: args.cropName }));
 
                 setSortOrder('asc'); // Show Best Price first
-                return `Found ${candidates.length} sellers. The best price is ₹${best.price} from ${best.farmerName} in ${best.location}. Who would you like to contact?`;
+                return `Found ${candidates.length} sellers. The best price is ₹${best.price} from ${best.farmerName}. Who would you like to contact?`;
             }
 
+            // Fallback
             const target = best;
             setSelectedListing(target);
             return `Opened chat with ${target.farmerName} for ${target.cropName} at ₹${target.price}.`;
@@ -253,12 +327,45 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
     };
 
     const filteredListings = listings.filter(l => {
-        if (!searchQuery) return true;
-        const q = searchQuery.toLowerCase();
-        return l.cropName.toLowerCase().includes(q) || l.location.toLowerCase().includes(q) || l.farmerName.toLowerCase().includes(q);
+        // Query Filter
+        if (activeFilters.query) {
+            const q = activeFilters.query.toLowerCase();
+            const match = l.cropName.toLowerCase().includes(q) ||
+                l.cropNameEnglish?.toLowerCase().includes(q);
+            if (!match) return false;
+        }
+
+        // Location Filter
+        if (activeFilters.location) {
+            if (!l.location.toLowerCase().includes(activeFilters.location.toLowerCase())) return false;
+        }
+
+        // Farmer Name Filter
+        if (activeFilters.farmerName) {
+            if (!l.farmerName.toLowerCase().includes(activeFilters.farmerName.toLowerCase())) return false;
+        }
+
+        // Price Filter
+        if (l.price < activeFilters.minPrice) return false;
+        if (l.price > activeFilters.maxPrice) return false;
+
+        // Time Filter
+        if (activeFilters.timeFilter === 'today') {
+            const oneDay = 24 * 60 * 60 * 1000;
+            if (Date.now() - l.timestamp > oneDay) return false;
+        }
+        if (activeFilters.timeFilter === 'week') {
+            const oneWeek = 7 * 24 * 60 * 60 * 1000;
+            if (Date.now() - l.timestamp > oneWeek) return false;
+        }
+
+        return true;
     }).sort((a, b) => {
         if (sortOrder === 'asc') return a.price - b.price;
         if (sortOrder === 'desc') return b.price - a.price;
+        // Default sort by Recency if 'newest'
+        if (activeFilters.timeFilter === 'newest') return b.timestamp - a.timestamp;
+
         return 0;
     });
 
@@ -374,13 +481,16 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
     // View: Marketplace Feed
     const feedInstruction = `
     You are a buyer assistant for ${user.name} speaking ${user.language}.
-    - Use 'search_market' to find crops. ALWAYS convert search to English.
-    - Use 'contact_seller' to talk to a farmer. You can filter by name, crop, location, price.
-    - Use 'sort_market' to filter/sort for best price.
-    - If user asks to clear filter, use 'clear_search'.
     
-    Current Visible Listings (Context):
-    ${filteredListings.slice(0, 5).map(l => `${l.farmerName} (${l.cropName} @ ${l.price})`).join('; ')}
+    Current Visible Listings (Reference Context):
+    ${filteredListings.slice(0, 5).map((l, i) => `${i + 1}. [${l.farmerName}] selling ${l.cropName} for ₹${l.price}`).join('\n    ')}
+
+    Universal Commands:
+    - Use 'search_market' to find crops. ALWAYS convert search to English.
+    - Use 'contact_seller' to talk to a farmer. 
+      - IMPORTANT: If the user says "Message HIM", "Message THAT seller", or refers to a person by name from the Visible Listings above, pass the EXACT farmer name from the list.
+      - If multiple sellers are visible but the user specifies a name, try to match the visible name.
+    - Use 'sort_market' to filter/sort for best price.
   `;
 
     return (
@@ -414,13 +524,13 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
                     <Search className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
                     <input
                         type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        value={activeFilters.query}
+                        onChange={(e) => setActiveFilters(prev => ({ ...prev, query: e.target.value }))}
                         placeholder="Search crops, farmers or location..."
                         className="w-full pl-10 pr-10 py-2.5 bg-gray-100 border-none rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
-                    {searchQuery && (
-                        <button onClick={() => setSearchQuery('')} className="absolute right-3 top-3 text-gray-400 hover:text-gray-600">
+                    {activeFilters.query && (
+                        <button onClick={() => setActiveFilters(prev => ({ ...prev, query: '' }))} className="absolute right-3 top-3 text-gray-400 hover:text-gray-600">
                             <X className="w-5 h-5" />
                         </button>
                     )}
@@ -430,7 +540,7 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
             <div className="p-4 grid gap-4">
                 {filteredListings.length === 0 ? (
                     <div className="text-center py-12 text-gray-500">
-                        No crops found matching "{searchQuery}"
+                        No crops found matching your criteria.
                     </div>
                 ) : (
                     filteredListings.map(listing => (

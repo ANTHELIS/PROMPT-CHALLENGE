@@ -177,10 +177,14 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
         console.log("Tool executing:", name, args);
 
         if (name === 'create_listing') {
+            // Standardize crop name to English for search
+            const standardizedName = await translateText(args.cropName, 'english');
+
             const newListing: Omit<CropListing, 'id'> = {
                 farmerId: user.id,
                 farmerName: user.name,
                 cropName: args.cropName,
+                cropNameEnglish: standardizedName,
                 quantity: args.quantity,
                 price: args.price,
                 location: args.location || user.location || 'India',
@@ -275,14 +279,18 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
         setView('edit');
     };
 
-    const saveListing = () => {
+    const saveListing = async () => {
         if (editingId) {
             onUpdateListing({ ...formState, id: editingId } as CropListing);
         } else {
+            // Standardize crop name
+            const standardizedName = await translateText(formState.cropName || '', 'english');
+
             onAddListing({
                 ...formState,
                 farmerId: user.id,
                 farmerName: user.name,
+                cropNameEnglish: standardizedName,
                 timestamp: Date.now(),
                 description: formState.description || 'Fresh crop'
             } as Omit<CropListing, 'id'>);
