@@ -61,6 +61,35 @@ npm run dev
 The frontend will start on the URL provided by Vite (typically `http://localhost:5173`).
 
 
+
+# Key Features
+
+## 🎙️ Intelligent Voice Assistant (Gemini Live)
+The platform features a deeply integrated, real-time voice assistant powered by **Google Gemini 2.0 Flash**. It supports **multilingual** interaction (English & Regional Languages) and provides specialized tools for each user role:
+
+### For Buyers 🛒
+*   **Advanced Market Search**: 
+    *   Filter by **Location** (e.g., *"Show me wheat available in Punjab"*).
+    *   Filter by **Price Range** (e.g., *"Crops under ₹50/kg"*).
+    *   Filter by **Freshness/Time** (e.g., *"Show listings added today"* or *"Newest first"*).
+    *   Search by **Farmer Name** or **Crop Name**.
+*   **Negotiation Aide**: The assistant acts as a translator and mediator. It can **read message history** summary and **send replies** via voice.
+*   **Smart Sorting**: Sort the marketplace by price (Low-to-High or High-to-Low) instantly.
+
+### For Farmers 🧑‍🌾
+*   **Hands-Free Inventory Management**: 
+    *   **Create Listings**: *"Post 100kg of Potatoes at ₹25 per kg in Nashik"*
+    *   **Update Stock**: *"Change the price of Onions to ₹30"*
+    *   **Delete Listings**: *"Remove my Tomato listing"*
+*   **Voice Inbox**: Ask *"Do I have any new messages?"* or *"Read the last message from the buyer"*.
+*   **Instant Replies**: Dictate replies to buyers without typing.
+*   **Market Insights**: Get AI-generated price recommendations and trend analysis before listing.
+
+## 🌐 Multilingual & Accessible
+*   **Real-time Chat Translation**: Messages are automatically translated between the Farmer's and Buyer's preferred languages.
+*   **Audio-First Interface**: Designed for accessibility, allowing full platform control through voice commands.
+
+
 # System Architecture: Multilingual Mandi
 
 This document provides a high-level overview of the system architecture for specific use by the hackathon organization team and developers.
