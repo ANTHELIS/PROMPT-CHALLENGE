@@ -6,6 +6,7 @@ import { TRANSLATIONS, LANGUAGES } from '../constants';
 import LiveAssistant from '../components/LiveAssistant';
 import { MapPin, MessageCircle, ArrowLeft, LogOut, Search, X, User as UserIcon } from 'lucide-react';
 import LanguageDropdown from '../components/LanguageDropdown';
+import ThemeToggle from '../components/ThemeToggle';
 import { FunctionDeclaration, Type } from '@google/genai';
 
 interface Props {
@@ -424,34 +425,34 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
         };
 
         return (
-            <div className="min-h-screen bg-gray-50 p-4 page-enter">
-                <button onClick={() => setShowProfile(false)} className="mb-4 flex items-center text-gray-600 hover:text-emerald-600 press-scale transition-colors">
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 page-enter transition-colors">
+                <button onClick={() => setShowProfile(false)} className="mb-4 flex items-center text-gray-600 dark:text-gray-400 hover:text-emerald-600 press-scale transition-colors">
                     <ArrowLeft className="w-5 h-5 mr-1" /> Back
                 </button>
-                <h2 className="text-2xl font-bold mb-6 text-gray-800 animate-fade-in-up">Profile</h2>
+                <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100 animate-fade-in-up">Profile</h2>
 
-                <div className="bg-white p-6 rounded-xl shadow-sm space-y-4 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm space-y-4 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
                     <div>
-                        <label className="block text-sm text-gray-500 mb-1">Name</label>
+                        <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Name</label>
                         <input
                             type="text"
                             value={profileData.name}
                             onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                            className="w-full p-3 border rounded-lg bg-gray-50 text-lg font-medium"
+                            className="w-full p-3 border dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-gray-100 text-lg font-medium"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-500 mb-1">Location</label>
+                        <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Location</label>
                         <input
                             type="text"
                             value={profileData.location}
                             onChange={(e) => setProfileData({ ...profileData, location: e.target.value })}
-                            className="w-full p-3 border rounded-lg bg-gray-50 text-lg font-medium"
+                            className="w-full p-3 border dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-gray-100 text-lg font-medium"
                             placeholder="e.g. Pune, Maharashtra"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-500 mb-1">Language</label>
+                        <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Language</label>
                         <LanguageDropdown
                             value={profileData.language}
                             onChange={(val) => setProfileData({ ...profileData, language: val as any })}
@@ -459,8 +460,8 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-500 mb-1">Phone (Cannot Change)</label>
-                        <div className="w-full p-3 border rounded-lg bg-gray-100 text-gray-500">
+                        <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Phone (Cannot Change)</label>
+                        <div className="w-full p-3 border dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
                             {user.phone}
                         </div>
                     </div>
@@ -483,32 +484,32 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
     `;
 
         return (
-            <div className="flex flex-col h-screen bg-gray-50">
+            <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
                 {/* Chat Header */}
-                <div className="bg-white p-4 shadow-sm flex items-center gap-3 z-10 animate-fade-in-down">
-                    <button onClick={() => setSelectedListing(null)} className="p-2 hover:bg-gray-100 rounded-full press-scale transition-colors">
-                        <ArrowLeft className="w-6 h-6 text-gray-600" />
+                <div className="bg-white dark:bg-gray-800 p-4 shadow-sm flex items-center gap-3 z-10 animate-fade-in-down">
+                    <button onClick={() => setSelectedListing(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full press-scale transition-colors">
+                        <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                     </button>
                     <div>
-                        <h2 className="font-bold text-gray-800">{selectedListing.farmerName}</h2>
-                        <p className="text-xs text-gray-500">{t('negotiationTitle')}: {selectedListing.cropName}</p>
+                        <h2 className="font-bold text-gray-800 dark:text-gray-100">{selectedListing.farmerName}</h2>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{t('negotiationTitle')}: {selectedListing.cropName}</p>
                     </div>
                 </div>
 
                 {/* Chat Area */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-32">
-                    <div className="bg-emerald-50 border border-emerald-100 p-3 rounded-lg text-sm mb-4 animate-fade-in-up">
-                        <p className="font-semibold text-emerald-800">{selectedListing.quantity}kg @ ₹{selectedListing.price}/kg</p>
+                    <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 p-3 rounded-lg text-sm mb-4 animate-fade-in-up">
+                        <p className="font-semibold text-emerald-800 dark:text-emerald-300">{selectedListing.quantity}kg @ ₹{selectedListing.price}/kg</p>
                     </div>
 
                     {messages.map((m) => {
                         const isMe = m.senderId === user.id;
                         return (
                             <div key={m.id} className={`flex ${isMe ? 'justify-end msg-out' : 'justify-start msg-in'}`}>
-                                <div className={`max-w-[80%] p-3 rounded-xl ${isMe ? 'bg-emerald-600 text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'}`}>
+                                <div className={`max-w-[80%] p-3 rounded-xl ${isMe ? 'bg-emerald-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 rounded-bl-none'}`}>
                                     <p>{m.text}</p>
                                     {m.translatedText && (
-                                        <p className="mt-2 pt-2 border-t border-gray-200/50 text-sm opacity-90 italic">
+                                        <p className="mt-2 pt-2 border-t border-gray-200/50 dark:border-gray-600/50 text-sm opacity-90 italic">
                                             {m.translatedText}
                                         </p>
                                     )}
@@ -519,13 +520,13 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
                 </div>
 
                 {/* Input Area */}
-                <div className="bg-white p-4 border-t flex gap-2 fixed bottom-0 w-full md:max-w-md left-0 md:left-auto">
+                <div className="bg-white dark:bg-gray-800 p-4 border-t dark:border-gray-700 flex gap-2 fixed bottom-0 w-full md:max-w-md left-0 md:left-auto">
                     <input
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder={t('typeMessage')}
-                        className="flex-1 border rounded-full px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"
+                        className="flex-1 border dark:border-gray-600 rounded-full px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none bg-white dark:bg-gray-700 dark:text-gray-100"
                         onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                     />
                     <button onClick={handleSendMessage} className="bg-emerald-600 text-white p-2 rounded-full px-6 font-semibold press-scale hover:bg-emerald-700 transition-colors">
@@ -560,27 +561,28 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
   `;
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20">
-            <header className="bg-white p-6 sticky top-0 z-10 shadow-sm flex flex-col gap-4 animate-fade-in-down">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 transition-colors">
+            <header className="bg-white dark:bg-gray-800 p-6 sticky top-0 z-10 shadow-sm flex flex-col gap-4 animate-fade-in-down">
                 <div className="flex justify-between items-start">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-800">{t('mandiTitle')}</h1>
-                        <p className="text-gray-500">{t('findCrops')}</p>
+                        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('mandiTitle')}</h1>
+                        <p className="text-gray-500 dark:text-gray-400">{t('findCrops')}</p>
                     </div>
                     <div className="flex gap-2">
+                        <ThemeToggle />
                         <button
                             onClick={() => { setProfileData({ name: user.name, location: user.location || '', language: user.language }); setShowProfile(true); }}
-                            className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors press-scale"
+                            className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors press-scale"
                             aria-label="Profile"
                         >
-                            <UserIcon className="w-5 h-5 text-gray-600" />
+                            <UserIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         </button>
                         <button
                             onClick={onLogout}
-                            className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors press-scale"
+                            className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors press-scale"
                             aria-label="Logout"
                         >
-                            <LogOut className="w-5 h-5 text-gray-600" />
+                            <LogOut className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         </button>
                     </div>
                 </div>
@@ -593,7 +595,7 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
                         value={activeFilters.query}
                         onChange={(e) => setActiveFilters(prev => ({ ...prev, query: e.target.value }))}
                         placeholder="Search crops, farmers or location..."
-                        className="w-full pl-10 pr-10 py-2.5 bg-gray-100 border-none rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                        className="w-full pl-10 pr-10 py-2.5 bg-gray-100 dark:bg-gray-700 border-none rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none dark:text-gray-100"
                     />
                     {activeFilters.query && (
                         <button onClick={() => setActiveFilters(prev => ({ ...prev, query: '' }))} className="absolute right-3 top-3 text-gray-400 hover:text-gray-600">
@@ -605,25 +607,25 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
 
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredListings.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
+                    <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                         No crops found matching your criteria.
                     </div>
                 ) : (
                     filteredListings.map((listing, idx) => (
-                        <div key={listing.id} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover-lift press-scale flex flex-col justify-between animate-fade-in-up" style={{ animationDelay: `${idx * 0.07}s` }}>
+                        <div key={listing.id} className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover-lift press-scale flex flex-col justify-between animate-fade-in-up" style={{ animationDelay: `${idx * 0.07}s` }}>
                             <div className="flex justify-between items-start mb-2">
                                 <div>
-                                    <h3 className="text-lg font-bold text-gray-900">{listing.cropName}</h3>
-                                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{listing.cropName}</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
                                         <MapPin className="w-3 h-3" /> {listing.location}
                                     </p>
                                 </div>
-                                <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded-md">
+                                <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold px-2 py-1 rounded-md">
                                     {listing.farmerName}
                                 </span>
                             </div>
 
-                            <p className="text-gray-600 text-sm mb-4 line-clamp-2">{listing.description}</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">{listing.description}</p>
                             {(listing as any).image ? (
                                 <div className="mb-4 overflow-hidden rounded-xl">
                                     <img
@@ -633,26 +635,26 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
                                     />
                                 </div>
                             ) : (
-                                <div className="mb-4 w-full h-40 md:h-56 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex flex-col items-center justify-center text-gray-300">
+                                <div className="mb-4 w-full h-40 md:h-56 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl flex flex-col items-center justify-center text-gray-300 dark:text-gray-500">
                                     <span className="text-5xl">🌾</span>
-                                    <p className="text-sm font-medium mt-2 text-gray-500">No Preview</p>
+                                    <p className="text-sm font-medium mt-2 text-gray-500 dark:text-gray-400">No Preview</p>
                                 </div>
                             )}
 
-                            <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+                            <div className="flex justify-between items-center pt-3 border-t border-gray-100 dark:border-gray-700">
                                 <div>
-                                    <span className="text-xs text-gray-500 uppercase">{t('price')}</span>
-                                    <p className="font-bold text-xl text-emerald-700">₹{listing.price}<span className="text-sm font-normal text-gray-500">/kg</span></p>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400 uppercase">{t('price')}</span>
+                                    <p className="font-bold text-xl text-emerald-700 dark:text-emerald-400">₹{listing.price}<span className="text-sm font-normal text-gray-500 dark:text-gray-400">/kg</span></p>
                                 </div>
                                 <div>
-                                    <span className="text-xs text-gray-500 uppercase">{t('quantity')}</span>
-                                    <p className="font-bold text-gray-800">{listing.quantity} kg</p>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400 uppercase">{t('quantity')}</span>
+                                    <p className="font-bold text-gray-800 dark:text-gray-200">{listing.quantity} kg</p>
                                 </div>
                             </div>
 
                             <button
                                 onClick={() => setSelectedListing(listing)}
-                                className="w-full mt-4 bg-gray-900 text-white py-3 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-gray-800 press-scale hover:shadow-lg transition-all"
+                                className="w-full mt-4 bg-gray-900 dark:bg-emerald-700 text-white py-3 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-gray-800 dark:hover:bg-emerald-600 press-scale hover:shadow-lg transition-all"
                             >
                                 <MessageCircle className="w-4 h-4" />
                                 {t('negotiate')}

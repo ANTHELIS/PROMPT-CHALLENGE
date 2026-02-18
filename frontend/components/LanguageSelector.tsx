@@ -17,8 +17,8 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ onSelect, selectedL
           className={`
             flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all hover-lift press-scale animate-pop-in
             ${selectedLang === lang.code
-              ? 'border-emerald-600 bg-emerald-50 text-emerald-900 shadow-lg scale-105'
-              : 'border-gray-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50/50'}
+              ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-900 dark:text-emerald-300 shadow-lg scale-105'
+              : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/20'}
           `}
           style={{ animationDelay: `${idx * 0.08}s` }}
         >

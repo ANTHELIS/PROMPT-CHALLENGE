@@ -80,7 +80,7 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ systemInstruction, initia
 
       {/* Label when inactive */}
       {!isActive && (
-        <div className="mt-2 bg-white/90 backdrop-blur px-3 py-1 rounded-full shadow-sm text-xs font-semibold text-emerald-800 pointer-events-auto animate-fade-in-up">
+        <div className="mt-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur px-3 py-1 rounded-full shadow-sm text-xs font-semibold text-emerald-800 dark:text-emerald-400 pointer-events-auto animate-fade-in-up">
           {initialMessage || "Tap to speak"}
         </div>
       )}

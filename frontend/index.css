@@ -708,3 +708,173 @@ button {
         display: none !important;
     }
 }
+
+/* ======================================
+   THEME TRANSITION ANIMATION
+   ====================================== */
+
+/* The circular reveal overlay */
+.theme-transition-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 55;
+    pointer-events: none;
+    background-color: var(--overlay-color, #111827);
+    clip-path: circle(0px at var(--cx, 50%) var(--cy, 50%));
+    opacity: 0;
+    will-change: clip-path, opacity;
+}
+
+.theme-transition-overlay.theme-transition-active {
+    animation: theme-reveal 800ms ease-in-out forwards;
+}
+
+@keyframes theme-reveal {
+    0% {
+        opacity: 1;
+        clip-path: circle(0px at var(--cx) var(--cy));
+    }
+
+    45% {
+        opacity: 1;
+        clip-path: circle(var(--max-r) at var(--cx) var(--cy));
+    }
+
+    55% {
+        opacity: 1;
+        clip-path: circle(var(--max-r) at var(--cx) var(--cy));
+    }
+
+    100% {
+        opacity: 0;
+        clip-path: circle(var(--max-r) at var(--cx) var(--cy));
+    }
+}
+
+/* ======================================
+   DARK MODE OVERRIDES
+   ====================================== */
+
+/* Smooth theme transition on containers */
+body,
+div,
+header,
+main,
+section,
+nav,
+aside,
+footer,
+button,
+a,
+input,
+select,
+textarea,
+label,
+span,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.15s ease;
+}
+
+html.dark body {
+    background-color: #111827;
+    color: #e5e7eb;
+}
+
+/* Dark hover-glow */
+html.dark .hover-glow:hover {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.25),
+        0 0 40px rgba(16, 185, 129, 0.1);
+}
+
+/* Dark scrollbar */
+html.dark ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+html.dark * {
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+/* Dark focus */
+html.dark input:focus,
+html.dark select:focus,
+html.dark textarea:focus {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+    border-color: #10b981 !important;
+}
+
+/* Dark text selection */
+html.dark ::selection {
+    background: rgba(16, 185, 129, 0.35);
+    color: #d1fae5;
+}
+
+html.dark ::-moz-selection {
+    background: rgba(16, 185, 129, 0.35);
+    color: #d1fae5;
+}
+
+/* Dark glassmorphism */
+html.dark .glass {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+html.dark .glass-dark {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Dark skeleton */
+html.dark .skeleton {
+    background: linear-gradient(90deg, #1f2937 25%, #374151 50%, #1f2937 75%);
+    background-size: 200% 100%;
+}
+
+/* Dark hover-lift shadow */
+html.dark .hover-lift:hover {
+    box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.4),
+        0 4px 10px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* Dark card */
+html.dark .card {
+    background: #1f2937;
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Dark shimmer */
+html.dark .animate-shimmer {
+    background: linear-gradient(90deg, #1f2937 25%, #374151 50%, #1f2937 75%);
+    background-size: 200% 100%;
+}
+
+/* Dark placeholder */
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+    color: #6b7280;
+}
+
+/* Dark tooltip */
+html.dark .tooltip::after {
+    background: #e5e7eb;
+    color: #111827;
+}

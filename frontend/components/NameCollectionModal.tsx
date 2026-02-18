@@ -119,7 +119,7 @@ const NameCollectionModal: React.FC<NameCollectionModalProps> = ({ user, selecte
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-modal">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-modal">
                 <div className="bg-emerald-600 p-6 text-center">
                     <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-md animate-float">
                         <UserIcon className="w-10 h-10 text-white" />
@@ -135,7 +135,7 @@ const NameCollectionModal: React.FC<NameCollectionModalProps> = ({ user, selecte
                 <div className="p-8">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 {t.voiceModalLabel}
                             </label>
                             <div className="relative">
@@ -144,15 +144,15 @@ const NameCollectionModal: React.FC<NameCollectionModalProps> = ({ user, selecte
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     placeholder={t.voiceModalPlaceholder}
-                                    className="w-full pl-4 pr-12 py-4 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-0 text-lg transition-all"
+                                    className="w-full pl-4 pr-12 py-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-emerald-500 focus:ring-0 text-lg transition-all bg-white dark:bg-gray-700 dark:text-gray-100"
                                     autoFocus
                                 />
                                 <button
                                     type="button"
                                     onClick={startListening}
                                     className={`absolute right-3 top-3 p-2 rounded-lg transition-all ${isListening
-                                        ? 'bg-red-100 text-red-600 animate-pulse'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-emerald-100 hover:text-emerald-600'
+                                        ? 'bg-red-100 dark:bg-red-900/30 text-red-600 animate-pulse'
+                                        : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600'
                                         }`}
                                 >
                                     {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}

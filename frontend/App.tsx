@@ -6,7 +6,7 @@ import FarmerDashboard from './pages/FarmerDashboard';
 import BuyerDashboard from './pages/BuyerDashboard';
 import { MOCK_LISTINGS, TRANSLATIONS } from './constants';
 import { ShieldCheck, Phone } from 'lucide-react';
-
+import ThemeToggle from './components/ThemeToggle';
 import NameCollectionModal from './components/NameCollectionModal';
 
 const App: React.FC = () => {
@@ -160,8 +160,9 @@ const App: React.FC = () => {
   // Render Logic
   if (step === 'lang') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-        <h1 className="text-3xl font-bold mb-8 text-gray-800 animate-fade-in-up">Select Language / भाषा चुनें</h1>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 transition-colors">
+        <div className="absolute top-4 right-4"><ThemeToggle /></div>
+        <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-gray-100 animate-fade-in-up">Select Language / भाषा चुनें</h1>
         <div className="animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
           <LanguageSelector onSelect={handleLangSelect} />
         </div>
@@ -171,18 +172,19 @@ const App: React.FC = () => {
 
   if (step === 'role') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
-        <h1 className="text-2xl font-bold mb-8 text-center animate-fade-in-up">{t('whoAreYou')}</h1>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-6 transition-colors">
+        <div className="absolute top-4 right-4"><ThemeToggle /></div>
+        <h1 className="text-2xl font-bold mb-8 text-center animate-fade-in-up dark:text-gray-100">{t('whoAreYou')}</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-lg">
-          <button onClick={() => handleRoleSelect('farmer')} className="bg-emerald-100 border-2 border-emerald-500 p-8 rounded-2xl flex flex-col items-center hover:bg-emerald-200 transition-colors hover-lift press-scale animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+          <button onClick={() => handleRoleSelect('farmer')} className="bg-emerald-100 dark:bg-emerald-900/40 border-2 border-emerald-500 p-8 rounded-2xl flex flex-col items-center hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition-colors hover-lift press-scale animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
             <span className="text-4xl mb-2">🧑‍🌾</span>
-            <span className="text-xl font-bold text-emerald-900">{t('roleFarmer')}</span>
-            <span className="text-sm text-emerald-700">{t('sellCropsDesc')}</span>
+            <span className="text-xl font-bold text-emerald-900 dark:text-emerald-300">{t('roleFarmer')}</span>
+            <span className="text-sm text-emerald-700 dark:text-emerald-400">{t('sellCropsDesc')}</span>
           </button>
-          <button onClick={() => handleRoleSelect('buyer')} className="bg-blue-100 border-2 border-blue-500 p-8 rounded-2xl flex flex-col items-center hover:bg-blue-200 transition-colors hover-lift press-scale animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+          <button onClick={() => handleRoleSelect('buyer')} className="bg-blue-100 dark:bg-blue-900/40 border-2 border-blue-500 p-8 rounded-2xl flex flex-col items-center hover:bg-blue-200 dark:hover:bg-blue-900/60 transition-colors hover-lift press-scale animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
             <span className="text-4xl mb-2">🏢</span>
-            <span className="text-xl font-bold text-blue-900">{t('roleBuyer')}</span>
-            <span className="text-sm text-blue-700">{t('buyCropsDesc')}</span>
+            <span className="text-xl font-bold text-blue-900 dark:text-blue-300">{t('roleBuyer')}</span>
+            <span className="text-sm text-blue-700 dark:text-blue-400">{t('buyCropsDesc')}</span>
           </button>
         </div>
       </div>
@@ -191,11 +193,12 @@ const App: React.FC = () => {
 
   if (step === 'auth') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 p-6 transition-colors">
+        <div className="absolute top-4 right-4"><ThemeToggle /></div>
         <div className="w-full max-w-sm space-y-6 animate-fade-in-up">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-800">{t('loginTitle')}</h2>
-            <p className="text-gray-500">{t('loginSubtitle')}</p>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('loginTitle')}</h2>
+            <p className="text-gray-500 dark:text-gray-400">{t('loginSubtitle')}</p>
           </div>
 
           <div className="space-y-4">
@@ -206,7 +209,7 @@ const App: React.FC = () => {
                 placeholder={t('enterPhonePlaceholder')}
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white dark:bg-gray-800 dark:text-gray-100"
               />
             </div>
 
@@ -217,7 +220,7 @@ const App: React.FC = () => {
                   placeholder={t('otpPlaceholder')}
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-center tracking-widest text-lg"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-center tracking-widest text-lg bg-white dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
             )}
@@ -276,10 +279,10 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 animate-fade-in">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 animate-fade-in transition-colors">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 rounded-full border-4 border-emerald-200 border-t-emerald-600 animate-spin" />
-        <p className="text-gray-500 font-medium text-lg animate-pulse">Loading...</p>
+        <div className="w-12 h-12 rounded-full border-4 border-emerald-200 dark:border-emerald-800 border-t-emerald-600 animate-spin" />
+        <p className="text-gray-500 dark:text-gray-400 font-medium text-lg animate-pulse">Loading...</p>
       </div>
     </div>
   );
