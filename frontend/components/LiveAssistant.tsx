@@ -35,10 +35,10 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ systemInstruction, initia
       sessionRef.current = createLiveSession(
         (playing) => setIsPlaying(playing),
         (text, isFinal) => {
-            setTranscription(prev => isFinal ? "" : text); // Clear on final to simulate "listening" buffer
-            if (isFinal && text && onTranscription) {
-                onTranscription(text);
-            }
+          setTranscription(prev => isFinal ? "" : text); // Clear on final to simulate "listening" buffer
+          if (isFinal && text && onTranscription) {
+            onTranscription(text);
+          }
         },
         systemInstruction,
         tools,
@@ -50,38 +50,38 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ systemInstruction, initia
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-none">
-       {/* Caption Bubble */}
-       {isActive && transcription && (
-        <div className="bg-black/80 text-white p-3 rounded-lg mb-4 max-w-xs backdrop-blur-sm animate-fade-in pointer-events-auto">
-            <p className="text-sm">{transcription}</p>
+      {/* Caption Bubble */}
+      {isActive && transcription && (
+        <div className="bg-black/80 text-white p-3 rounded-lg mb-4 max-w-xs backdrop-blur-sm animate-fade-in-up pointer-events-auto glass-dark">
+          <p className="text-sm">{transcription}</p>
         </div>
-       )}
+      )}
 
       {/* Main Button */}
       <button
         onClick={toggleSession}
         className={`
           pointer-events-auto
-          h-16 w-16 rounded-full shadow-xl flex items-center justify-center transition-all duration-300
-          ${isActive ? 'bg-red-500 hover:bg-red-600 scale-110' : 'bg-emerald-600 hover:bg-emerald-700'}
+          h-16 w-16 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 animate-bounce-in
+          ${isActive ? 'bg-red-500 hover:bg-red-600 scale-110' : 'bg-emerald-600 hover:bg-emerald-700 hover-glow'}
         `}
       >
         {isActive ? (
           <div className="relative">
-             {isPlaying && (
-                <span className="absolute -inset-2 rounded-full border-2 border-white animate-ping opacity-75"></span>
-             )}
+            {isPlaying && (
+              <span className="absolute -inset-2 rounded-full border-2 border-white animate-ping opacity-75"></span>
+            )}
             <X className="w-8 h-8 text-white" />
           </div>
         ) : (
           <Mic className="w-8 h-8 text-white" />
         )}
       </button>
-      
+
       {/* Label when inactive */}
       {!isActive && (
-        <div className="mt-2 bg-white/90 backdrop-blur px-3 py-1 rounded-full shadow-sm text-xs font-semibold text-emerald-800 pointer-events-auto">
-            {initialMessage || "Tap to speak"}
+        <div className="mt-2 bg-white/90 backdrop-blur px-3 py-1 rounded-full shadow-sm text-xs font-semibold text-emerald-800 pointer-events-auto animate-fade-in-up">
+          {initialMessage || "Tap to speak"}
         </div>
       )}
     </div>

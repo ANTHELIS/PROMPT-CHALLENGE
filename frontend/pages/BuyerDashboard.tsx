@@ -5,6 +5,7 @@ import { translateText } from '../services/geminiService';
 import { TRANSLATIONS, LANGUAGES } from '../constants';
 import LiveAssistant from '../components/LiveAssistant';
 import { MapPin, MessageCircle, ArrowLeft, LogOut, Search, X, User as UserIcon } from 'lucide-react';
+import LanguageDropdown from '../components/LanguageDropdown';
 import { FunctionDeclaration, Type } from '@google/genai';
 
 interface Props {
@@ -423,13 +424,13 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
         };
 
         return (
-            <div className="min-h-screen bg-gray-50 p-4">
-                <button onClick={() => setShowProfile(false)} className="mb-4 flex items-center text-gray-600">
+            <div className="min-h-screen bg-gray-50 p-4 page-enter">
+                <button onClick={() => setShowProfile(false)} className="mb-4 flex items-center text-gray-600 hover:text-emerald-600 press-scale transition-colors">
                     <ArrowLeft className="w-5 h-5 mr-1" /> Back
                 </button>
-                <h2 className="text-2xl font-bold mb-6 text-gray-800">Profile</h2>
+                <h2 className="text-2xl font-bold mb-6 text-gray-800 animate-fade-in-up">Profile</h2>
 
-                <div className="bg-white p-6 rounded-xl shadow-sm space-y-4">
+                <div className="bg-white p-6 rounded-xl shadow-sm space-y-4 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
                     <div>
                         <label className="block text-sm text-gray-500 mb-1">Name</label>
                         <input
@@ -451,17 +452,11 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
                     </div>
                     <div>
                         <label className="block text-sm text-gray-500 mb-1">Language</label>
-                        <select
+                        <LanguageDropdown
                             value={profileData.language}
-                            onChange={(e) => setProfileData({ ...profileData, language: e.target.value as any })}
-                            className="w-full p-3 border rounded-lg bg-gray-50 text-lg font-medium"
-                        >
-                            {LANGUAGES.map(lang => (
-                                <option key={lang.code} value={lang.code}>
-                                    {lang.label} ({lang.nativeLabel})
-                                </option>
-                            ))}
-                        </select>
+                            onChange={(val) => setProfileData({ ...profileData, language: val as any })}
+                            options={LANGUAGES}
+                        />
                     </div>
                     <div>
                         <label className="block text-sm text-gray-500 mb-1">Phone (Cannot Change)</label>
@@ -469,7 +464,7 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
                             {user.phone}
                         </div>
                     </div>
-                    <button onClick={saveProfile} className="w-full py-4 bg-emerald-600 text-white rounded-xl font-bold text-lg shadow-lg mt-4">
+                    <button onClick={saveProfile} className="w-full py-4 bg-emerald-600 text-white rounded-xl font-bold text-lg shadow-lg mt-4 hover-glow press-scale btn-ripple">
                         Save Profile
                     </button>
                 </div>
@@ -490,8 +485,8 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
         return (
             <div className="flex flex-col h-screen bg-gray-50">
                 {/* Chat Header */}
-                <div className="bg-white p-4 shadow-sm flex items-center gap-3 z-10">
-                    <button onClick={() => setSelectedListing(null)} className="p-2 hover:bg-gray-100 rounded-full">
+                <div className="bg-white p-4 shadow-sm flex items-center gap-3 z-10 animate-fade-in-down">
+                    <button onClick={() => setSelectedListing(null)} className="p-2 hover:bg-gray-100 rounded-full press-scale transition-colors">
                         <ArrowLeft className="w-6 h-6 text-gray-600" />
                     </button>
                     <div>
@@ -502,14 +497,14 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
 
                 {/* Chat Area */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-32">
-                    <div className="bg-emerald-50 border border-emerald-100 p-3 rounded-lg text-sm mb-4">
+                    <div className="bg-emerald-50 border border-emerald-100 p-3 rounded-lg text-sm mb-4 animate-fade-in-up">
                         <p className="font-semibold text-emerald-800">{selectedListing.quantity}kg @ ₹{selectedListing.price}/kg</p>
                     </div>
 
                     {messages.map((m) => {
                         const isMe = m.senderId === user.id;
                         return (
-                            <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                            <div key={m.id} className={`flex ${isMe ? 'justify-end msg-out' : 'justify-start msg-in'}`}>
                                 <div className={`max-w-[80%] p-3 rounded-xl ${isMe ? 'bg-emerald-600 text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'}`}>
                                     <p>{m.text}</p>
                                     {m.translatedText && (
@@ -533,7 +528,7 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
                         className="flex-1 border rounded-full px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"
                         onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                     />
-                    <button onClick={handleSendMessage} className="bg-emerald-600 text-white p-2 rounded-full px-6 font-semibold">
+                    <button onClick={handleSendMessage} className="bg-emerald-600 text-white p-2 rounded-full px-6 font-semibold press-scale hover:bg-emerald-700 transition-colors">
                         {t('send')}
                     </button>
                 </div>
@@ -566,7 +561,7 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
 
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
-            <header className="bg-white p-6 sticky top-0 z-10 shadow-sm flex flex-col gap-4">
+            <header className="bg-white p-6 sticky top-0 z-10 shadow-sm flex flex-col gap-4 animate-fade-in-down">
                 <div className="flex justify-between items-start">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-800">{t('mandiTitle')}</h1>
@@ -575,14 +570,14 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
                     <div className="flex gap-2">
                         <button
                             onClick={() => { setProfileData({ name: user.name, location: user.location || '', language: user.language }); setShowProfile(true); }}
-                            className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+                            className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors press-scale"
                             aria-label="Profile"
                         >
                             <UserIcon className="w-5 h-5 text-gray-600" />
                         </button>
                         <button
                             onClick={onLogout}
-                            className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+                            className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors press-scale"
                             aria-label="Logout"
                         >
                             <LogOut className="w-5 h-5 text-gray-600" />
@@ -614,8 +609,8 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
                         No crops found matching your criteria.
                     </div>
                 ) : (
-                    filteredListings.map(listing => (
-                        <div key={listing.id} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 transition-all hover:shadow-md flex flex-col justify-between">
+                    filteredListings.map((listing, idx) => (
+                        <div key={listing.id} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover-lift press-scale flex flex-col justify-between animate-fade-in-up" style={{ animationDelay: `${idx * 0.07}s` }}>
                             <div className="flex justify-between items-start mb-2">
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-900">{listing.cropName}</h3>
@@ -630,11 +625,11 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
 
                             <p className="text-gray-600 text-sm mb-4 line-clamp-2">{listing.description}</p>
                             {(listing as any).image ? (
-                                <div className="mb-4">
+                                <div className="mb-4 overflow-hidden rounded-xl">
                                     <img
                                         src={(listing as any).image.startsWith('http') ? (listing as any).image : `http://localhost:5000${(listing as any).image}`}
                                         alt="crop"
-                                        className="w-full h-40 md:h-56 object-cover rounded-xl"
+                                        className="w-full h-40 md:h-56 object-cover transition-transform duration-300 hover:scale-105"
                                     />
                                 </div>
                             ) : (
@@ -657,7 +652,7 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
 
                             <button
                                 onClick={() => setSelectedListing(listing)}
-                                className="w-full mt-4 bg-gray-900 text-white py-3 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-gray-800"
+                                className="w-full mt-4 bg-gray-900 text-white py-3 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-gray-800 press-scale hover:shadow-lg transition-all"
                             >
                                 <MessageCircle className="w-4 h-4" />
                                 {t('negotiate')}

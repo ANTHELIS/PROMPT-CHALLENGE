@@ -118,10 +118,10 @@ const NameCollectionModal: React.FC<NameCollectionModalProps> = ({ user, selecte
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-scale-in">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-modal">
                 <div className="bg-emerald-600 p-6 text-center">
-                    <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-md">
+                    <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-md animate-float">
                         <UserIcon className="w-10 h-10 text-white" />
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-1">
@@ -167,7 +167,7 @@ const NameCollectionModal: React.FC<NameCollectionModalProps> = ({ user, selecte
                         <button
                             type="submit"
                             disabled={!name.trim() || isSaving}
-                            className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl translate-y-0 hover:-translate-y-1"
+                            className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl translate-y-0 hover:-translate-y-1 hover-glow press-scale"
                         >
                             {isSaving ? (
                                 <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />

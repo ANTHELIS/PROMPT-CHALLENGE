@@ -161,8 +161,10 @@ const App: React.FC = () => {
   if (step === 'lang') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-        <h1 className="text-3xl font-bold mb-8 text-gray-800">Select Language / भाषा चुनें</h1>
-        <LanguageSelector onSelect={handleLangSelect} />
+        <h1 className="text-3xl font-bold mb-8 text-gray-800 animate-fade-in-up">Select Language / भाषा चुनें</h1>
+        <div className="animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
+          <LanguageSelector onSelect={handleLangSelect} />
+        </div>
       </div>
     );
   }
@@ -170,14 +172,14 @@ const App: React.FC = () => {
   if (step === 'role') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
-        <h1 className="text-2xl font-bold mb-8 text-center">{t('whoAreYou')}</h1>
+        <h1 className="text-2xl font-bold mb-8 text-center animate-fade-in-up">{t('whoAreYou')}</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-lg">
-          <button onClick={() => handleRoleSelect('farmer')} className="bg-emerald-100 border-2 border-emerald-500 p-8 rounded-2xl flex flex-col items-center hover:bg-emerald-200 transition-colors">
+          <button onClick={() => handleRoleSelect('farmer')} className="bg-emerald-100 border-2 border-emerald-500 p-8 rounded-2xl flex flex-col items-center hover:bg-emerald-200 transition-colors hover-lift press-scale animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
             <span className="text-4xl mb-2">🧑‍🌾</span>
             <span className="text-xl font-bold text-emerald-900">{t('roleFarmer')}</span>
             <span className="text-sm text-emerald-700">{t('sellCropsDesc')}</span>
           </button>
-          <button onClick={() => handleRoleSelect('buyer')} className="bg-blue-100 border-2 border-blue-500 p-8 rounded-2xl flex flex-col items-center hover:bg-blue-200 transition-colors">
+          <button onClick={() => handleRoleSelect('buyer')} className="bg-blue-100 border-2 border-blue-500 p-8 rounded-2xl flex flex-col items-center hover:bg-blue-200 transition-colors hover-lift press-scale animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
             <span className="text-4xl mb-2">🏢</span>
             <span className="text-xl font-bold text-blue-900">{t('roleBuyer')}</span>
             <span className="text-sm text-blue-700">{t('buyCropsDesc')}</span>
@@ -190,7 +192,7 @@ const App: React.FC = () => {
   if (step === 'auth') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6">
-        <div className="w-full max-w-sm space-y-6">
+        <div className="w-full max-w-sm space-y-6 animate-fade-in-up">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-800">{t('loginTitle')}</h2>
             <p className="text-gray-500">{t('loginSubtitle')}</p>
@@ -223,7 +225,7 @@ const App: React.FC = () => {
             <button
               disabled={phoneNumber.length < 10}
               onClick={handleLogin}
-              className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold hover:bg-emerald-700 disabled:opacity-50 transition-all"
+              className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold hover:bg-emerald-700 disabled:opacity-50 transition-all hover-glow press-scale"
             >
               {t('verifyLogin')}
             </button>
@@ -273,7 +275,14 @@ const App: React.FC = () => {
     );
   }
 
-  return <div>Loading...</div>;
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 animate-fade-in">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 rounded-full border-4 border-emerald-200 border-t-emerald-600 animate-spin" />
+        <p className="text-gray-500 font-medium text-lg animate-pulse">Loading...</p>
+      </div>
+    </div>
+  );
 };
 
 export default App;
