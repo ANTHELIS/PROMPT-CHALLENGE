@@ -9,6 +9,7 @@ const listingSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   location: { type: String, required: true },
   description: { type: String },
+  image: { type: String }, // Path to the uploaded image
 }, { timestamps: true });
 
 module.exports = mongoose.model('Listing', listingSchema);

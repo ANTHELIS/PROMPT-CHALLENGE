@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const Listing = require('../models/Listing');
 
 // Login or Register
 router.post('/login', async (req, res) => {
@@ -58,6 +59,13 @@ router.put('/:id', async (req, res) => {
     // Phone number is explicitly NOT updated
 
     await user.save();
+
+    // If name was updated, update all listings by this farmer
+    if (name) {
+      // Assuming farmerId in Listing stores the User's _id (as string or ObjectId)
+      await Listing.updateMany({ farmerId: id }, { farmerName: name });
+    }
+
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });

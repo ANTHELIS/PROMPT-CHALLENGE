@@ -83,7 +83,8 @@ const NameCollectionModal: React.FC<NameCollectionModalProps> = ({ user, selecte
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
 
-        recognition.lang = getLangCode(currentLang);
+        // Always use English for name capture so names are in Latin script
+        recognition.lang = 'en-US';
         recognition.continuous = false;
         recognition.interimResults = false;
 
@@ -92,9 +93,9 @@ const NameCollectionModal: React.FC<NameCollectionModalProps> = ({ user, selecte
 
         recognition.onresult = (event: any) => {
             const transcript = event.results[0][0].transcript;
-            // Capitalize first letter of each word
+            // Capitalize first letter of each word for proper name formatting
             const formattedName = transcript.replace(/\b\w/g, (c: string) => c.toUpperCase());
-            setName(prev => prev ? `${prev} ${formattedName}` : formattedName);
+            setName(formattedName);
         };
 
         recognition.start();

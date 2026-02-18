@@ -6,11 +6,12 @@ import LiveAssistant from '../components/LiveAssistant';
 import { TRANSLATIONS } from '../constants';
 import { Sprout, TrendingUp, Edit2, MessageCircle, Phone, ArrowLeft, Plus, Trash2, LogOut, User as UserIcon } from 'lucide-react';
 import { FunctionDeclaration, Type } from '@google/genai';
+import { LANGUAGES } from '../constants';
 
 interface Props {
     user: User;
     listings: CropListing[];
-    onAddListing: (listing: Omit<CropListing, 'id'>) => void;
+    onAddListing: (listing: FormData) => void;
     onUpdateListing: (listing: CropListing) => void;
     onDeleteListing: (listingId: string) => void;
     onUpdateUser: (updates: Partial<User>) => void;
@@ -22,10 +23,32 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
     const [activeTab, setActiveTab] = useState<'my_listings' | 'inbox'>('my_listings');
     const [insight, setInsight] = useState<any>(null);
     const [formState, setFormState] = useState<Partial<CropListing>>({});
+    const [imageFile, setImageFile] = useState<File | null>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [inboxItems, setInboxItems] = useState<{ partnerId: string, name: string, lastMsg: string }[]>([]);
-    const [activePartnerId, setActivePartnerId] = useState<string | null>(null);
-    const [profileData, setProfileData] = useState({ name: '' });
+    const [savingListing, setSavingListing] = useState(false);
+
+    // Local crop name dictionary for instant translation (no API call needed)
+    const CROP_DICT: Record<string, string> = {
+        // Hindi
+        'प्याज': 'Onion', 'टमाटर': 'Tomato', 'आलू': 'Potato', 'गेहूं': 'Wheat', 'गेहूँ': 'Wheat',
+        'चावल': 'Rice', 'धान': 'Paddy', 'मक्का': 'Corn', 'गन्ना': 'Sugarcane', 'कपास': 'Cotton',
+        'सोयाबीन': 'Soybean', 'मूंगफली': 'Peanut', 'सरसों': 'Mustard', 'बैंगन': 'Brinjal',
+        'भिंडी': 'Okra', 'गोभी': 'Cauliflower', 'पत्ता गोभी': 'Cabbage', 'मटर': 'Peas',
+        'लहसुन': 'Garlic', 'अदरक': 'Ginger', 'हल्दी': 'Turmeric', 'मिर्च': 'Chili',
+        'गाजर': 'Carrot', 'मूली': 'Radish', 'पालक': 'Spinach', 'केला': 'Banana',
+        'आम': 'Mango', 'अंगूर': 'Grapes', 'संतरा': 'Orange', 'अनार': 'Pomegranate',
+        'ज्वार': 'Sorghum', 'बाजरा': 'Pearl Millet', 'रागी': 'Finger Millet',
+        'चना': 'Chickpea', 'मसूर': 'Lentil', 'उड़द': 'Black Gram', 'मूंग': 'Mung Bean',
+        'तुअर': 'Pigeon Pea', 'अरहर': 'Pigeon Pea', 'जीरा': 'Cumin', 'धनिया': 'Coriander',
+        // Marathi
+        'कांदा': 'Onion', 'बटाटा': 'Potato', 'तांदूळ': 'Rice', 'ऊस': 'Sugarcane',
+        'वांगे': 'Brinjal', 'भेंडी': 'Okra', 'फ्लॉवर': 'Cauliflower', 'कोबी': 'Cabbage',
+        'लसूण': 'Garlic', 'आले': 'Ginger', 'हिरवी मिरची': 'Green Chili',
+        'मुळा': 'Radish',
+    };
+    const [inboxItems, setInboxItems] = useState<{ partnerId: string, listingId?: string, listingName?: string, name: string, lastMsg: string }[]>([]);
+    const [activeChat, setActiveChat] = useState<{ partnerId: string, listingId?: string } | null>(null);
+    const [profileData, setProfileData] = useState({ name: '', location: '', language: 'en' as any });
 
     // Keep a ref of listings to access inside the Voice Session closure
     const listingsRef = useRef(listings);
@@ -56,36 +79,60 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
 
     useEffect(() => {
         const processInbox = async () => {
-            // Get unique partners
-            const partners = new Set<string>();
-            messages.forEach(m => {
-                if (m.senderId !== user.id) partners.add(m.senderId);
-                if (m.receiverId === user.id && m.senderId) partners.add(m.senderId); // Same as above
-                if (m.senderId === user.id && m.receiverId) partners.add(m.receiverId);
-            });
-            // Filter out self and known bots if desired, though bots might be valid
-            partners.delete(user.id);
+            // Group by Key: partnerId_listingId
+            const threads = new Map<string, { partnerId: string, listingId?: string, listingName?: string, name: string, lastMsg: string, timestamp: number }>();
 
-            const items = [];
-            for (const pid of Array.from(partners)) {
-                if (!pid) continue;
-                // Try to get name. Ideally cache this or use api.getUser
-                // For 'buyer_1', api.getUser returns null (404/500), so we handle that
-                let name = pid;
-                if (pid === 'buyer_1') name = "Manoj (Demo)";
-                else {
-                    const u = await api.getUser(pid);
-                    if (u) name = u.name;
+            for (const m of messages) {
+                const partnerId = m.senderId === user.id ? m.receiverId : m.senderId;
+                if (!partnerId || partnerId === user.id) continue;
+
+                // Unique Key for thread
+                const key = `${partnerId}_${m.listingId || 'general'}`;
+
+                if (!threads.has(key)) {
+                    // Initial info (will refine name later)
+                    let listingName = 'General';
+                    if (m.listingId) {
+                        const l = listings.find(lst => lst.id === m.listingId);
+                        if (l) listingName = l.cropName;
+                    }
+
+                    threads.set(key, {
+                        partnerId,
+                        listingId: m.listingId,
+                        listingName,
+                        name: partnerId, // temp
+                        lastMsg: m.text,
+                        timestamp: m.timestamp
+                    });
+                } else {
+                    // Update last msg if newer
+                    const t = threads.get(key)!;
+                    if (m.timestamp > t.timestamp) {
+                        t.lastMsg = m.text;
+                        t.timestamp = m.timestamp;
+                    }
                 }
-
-                const relevant = messages.filter(m => m.senderId === pid || m.receiverId === pid);
-                const last = relevant[relevant.length - 1];
-                items.push({ partnerId: pid, name, lastMsg: last?.text || '' });
             }
+
+            const items = await Promise.all(Array.from(threads.values()).map(async (item) => {
+                let name = item.partnerId;
+                if (item.partnerId === 'buyer_1') name = "Manoj (Demo)";
+                else {
+                    try {
+                        const u = await api.getUser(item.partnerId);
+                        if (u) name = u.name;
+                    } catch (e) { }
+                }
+                return { ...item, name };
+            }));
+
+            // Sort by latest
+            items.sort((a, b) => b.timestamp - a.timestamp);
             setInboxItems(items);
         };
         processInbox();
-    }, [messages, user.id]);
+    }, [messages, user.id, listings]);
 
     const [newMessage, setNewMessage] = useState('');
 
@@ -146,10 +193,21 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
         },
         {
             name: 'check_inbox',
-            description: 'Check if there are any messages or orders from buyers. Returns a summary of inquiries.',
+            description: 'Check messages. Returns sender and product name for each conversation.',
             parameters: {
                 type: Type.OBJECT,
                 properties: {},
+            }
+        },
+        {
+            name: 'find_conversation_by_product',
+            description: 'Find conversations about a specific crop product.',
+            parameters: {
+                type: Type.OBJECT,
+                properties: {
+                    cropName: { type: Type.STRING, description: "Name of the crop to search for" }
+                },
+                required: ['cropName']
             }
         },
         {
@@ -170,6 +228,19 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
                 },
                 required: ['message']
             }
+        },
+        {
+            name: 'update_profile',
+            description: 'Update the user profile details like name, location, or language.',
+            parameters: {
+                type: Type.OBJECT,
+                properties: {
+                    name: { type: Type.STRING, description: "New name of the user" },
+                    location: { type: Type.STRING, description: "New location/city" },
+                    language: { type: Type.STRING, enum: ['en', 'hi', 'mr', 'te', 'ta', 'bn'], description: "Language code" }
+                },
+                required: []
+            }
         }
     ];
 
@@ -180,18 +251,17 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
             // Standardize crop name to English for search
             const standardizedName = await translateText(args.cropName, 'english');
 
-            const newListing: Omit<CropListing, 'id'> = {
-                farmerId: user.id,
-                farmerName: user.name,
-                cropName: args.cropName,
-                cropNameEnglish: standardizedName,
-                quantity: args.quantity,
-                price: args.price,
-                location: args.location || user.location || 'India',
-                description: 'Created via Voice Assistant',
-                timestamp: Date.now()
-            };
-            onAddListing(newListing);
+            const formData = new FormData();
+            formData.append('farmerId', user.id);
+            formData.append('farmerName', user.name);
+            formData.append('cropName', args.cropName);
+            formData.append('cropNameEnglish', standardizedName);
+            formData.append('quantity', String(args.quantity));
+            formData.append('price', String(args.price));
+            formData.append('location', args.location || user.location || 'India');
+            formData.append('description', 'Created via Voice Assistant');
+
+            onAddListing(formData);
             return "Listing created successfully.";
         }
 
@@ -230,10 +300,16 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
         }
 
         if (name === 'check_inbox') {
-            const incoming = messagesRef.current.filter(m => m.senderId !== user.id);
-            if (incoming.length === 0) return "No new messages.";
-            // Simple heuristic: group by sender (assuming only 1 mock buyer 'buyer_1' for now)
-            return "You have new messages in your inbox. Please check the 'Inbox' tab.";
+            if (inboxItems.length === 0) return "Inbox is empty.";
+            return JSON.stringify(inboxItems.map(i => ({ from: i.name, product: i.listingName, lastParams: i.lastMsg })));
+        }
+
+        if (name === 'find_conversation_by_product') {
+            const matches = inboxItems.filter(i =>
+                i.listingName?.toLowerCase().includes(args.cropName.toLowerCase())
+            );
+            if (matches.length === 0) return `No conversations found for ${args.cropName}.`;
+            return `Found ${matches.length} conversations for ${args.cropName}. From: ${matches.map(m => m.name).join(', ')}.`;
         }
 
         if (name === 'read_latest_messages') {
@@ -243,14 +319,15 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
         }
 
         if (name === 'send_reply') {
-            // Heuristic: reply to last sender
-            const lastIncoming = messagesRef.current.slice().reverse().find(m => m.senderId !== user.id);
-            const receiverId = lastIncoming ? lastIncoming.senderId : 'buyer_1';
+            if (!activeChat) return "Please open a chat first or specify which conversation to reply to.";
+            const receiverId = activeChat.partnerId;
+            const listingId = activeChat.listingId;
 
             try {
                 await api.sendMessage({
                     senderId: user.id,
                     receiverId,
+                    listingId,
                     text: args.message,
                     timestamp: Date.now()
                 });
@@ -259,6 +336,22 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
             } catch (e) {
                 return "Failed to send message.";
             }
+
+        }
+
+        if (name === 'update_profile') {
+            const updates: any = {};
+            if (args.name) updates.name = args.name;
+            if (args.location) updates.location = args.location;
+            if (args.language) updates.language = args.language;
+
+            if (Object.keys(updates).length > 0) {
+                onUpdateUser(updates);
+                // Also update local profile form state if visible
+                setProfileData(prev => ({ ...prev, ...updates }));
+                return "Profile updated successfully.";
+            }
+            return "No changes provided for profile.";
         }
 
         return "Unknown tool";
@@ -268,6 +361,7 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
 
     const startCreate = () => {
         setFormState({});
+        setImageFile(null);
         setEditingId(null);
         setInsight(null);
         setView('create');
@@ -279,39 +373,71 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
         setView('edit');
     };
 
-    const saveListing = async () => {
-        if (editingId) {
-            onUpdateListing({ ...formState, id: editingId } as CropListing);
-        } else {
-            // Standardize crop name
-            const standardizedName = await translateText(formState.cropName || '', 'english');
-
-            onAddListing({
-                ...formState,
-                farmerId: user.id,
-                farmerName: user.name,
-                cropNameEnglish: standardizedName,
-                timestamp: Date.now(),
-                description: formState.description || 'Fresh crop'
-            } as Omit<CropListing, 'id'>);
+    const getEnglishCropName = (name: string): string | null => {
+        if (!name) return null;
+        const trimmed = name.trim();
+        // Check dictionary (case-insensitive)
+        const match = CROP_DICT[trimmed] || CROP_DICT[trimmed.toLowerCase()];
+        if (match) return match;
+        // If already in English (latin chars), just capitalize
+        if (/^[a-zA-Z\s]+$/.test(trimmed)) {
+            return trimmed.replace(/\b\w/g, c => c.toUpperCase());
         }
-        setView('home');
+        return null; // Not found, needs API
     };
 
-    const openChat = (partnerId: string) => {
-        setActivePartnerId(partnerId);
+    const saveListing = async () => {
+        setSavingListing(true);
+        try {
+            if (editingId) {
+                onUpdateListing({ ...formState, id: editingId } as CropListing);
+            } else {
+                // Fast local lookup first, fallback to Gemini only if needed
+                const cropName = formState.cropName || '';
+                let englishName = getEnglishCropName(cropName);
+                if (!englishName) {
+                    // Only call Gemini API for unknown crops
+                    englishName = await translateText(cropName, 'english');
+                }
+
+                const formData = new FormData();
+                formData.append('farmerId', user.id);
+                formData.append('farmerName', user.name);
+                formData.append('cropName', cropName);
+                formData.append('cropNameEnglish', englishName);
+                formData.append('quantity', String(formState.quantity));
+                formData.append('price', String(formState.price));
+                formData.append('location', formState.location || '');
+                formData.append('description', formState.description || 'Fresh crop');
+
+                if (imageFile) {
+                    formData.append('image', imageFile);
+                }
+
+                onAddListing(formData);
+            }
+            setView('home');
+        } finally {
+            setSavingListing(false);
+        }
+    };
+
+    const openChat = (item: { partnerId: string, listingId?: string }) => {
+        setActiveChat(item);
         setView('chat');
     };
 
     const sendMessage = async () => {
-        if (!newMessage.trim()) return;
+        if (!newMessage.trim() || !activeChat) return;
 
-        const receiverId = activePartnerId || 'buyer_1';
+        const receiverId = activeChat.partnerId;
+        const listingId = activeChat.listingId;
 
         try {
             const msg = await api.sendMessage({
                 senderId: user.id,
                 receiverId: receiverId,
+                listingId: listingId,
                 text: newMessage,
                 timestamp: Date.now()
             });
@@ -387,8 +513,26 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
                         />
                     </div>
 
-                    <button onClick={saveListing} className="w-full py-4 bg-emerald-600 text-white rounded-xl font-bold text-lg shadow-lg mt-4">
-                        {isEdit ? t('update') : t('save')}
+                    <div>
+                        <label className="block text-sm text-gray-500 mb-1">Image (Optional)</label>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={e => {
+                                if (e.target.files && e.target.files[0]) {
+                                    setImageFile(e.target.files[0]);
+                                }
+                            }}
+                            className="w-full"
+                        />
+                    </div>
+
+                    <button onClick={saveListing} disabled={savingListing} className="w-full py-4 bg-emerald-600 text-white rounded-xl font-bold text-lg shadow-lg mt-4 disabled:opacity-60 flex items-center justify-center gap-2">
+                        {savingListing ? (
+                            <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Saving...</>
+                        ) : (
+                            isEdit ? t('update') : t('save')
+                        )}
                     </button>
                 </div>
 
@@ -402,7 +546,11 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
 
     if (view === 'profile') {
         const saveProfile = () => {
-            onUpdateUser({ name: profileData.name });
+            onUpdateUser({
+                name: profileData.name,
+                location: profileData.location,
+                language: profileData.language
+            });
             setView('home');
         };
 
@@ -424,6 +572,30 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
                         />
                     </div>
                     <div>
+                        <label className="block text-sm text-gray-500 mb-1">Location</label>
+                        <input
+                            type="text"
+                            value={profileData.location}
+                            onChange={(e) => setProfileData({ ...profileData, location: e.target.value })}
+                            className="w-full p-3 border rounded-lg bg-gray-50 text-lg font-medium"
+                            placeholder="e.g. Nashik, Maharashtra"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm text-gray-500 mb-1">Language</label>
+                        <select
+                            value={profileData.language}
+                            onChange={(e) => setProfileData({ ...profileData, language: e.target.value as any })}
+                            className="w-full p-3 border rounded-lg bg-gray-50 text-lg font-medium"
+                        >
+                            {LANGUAGES.map(lang => (
+                                <option key={lang.code} value={lang.code}>
+                                    {lang.label} ({lang.nativeLabel})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
                         <label className="block text-sm text-gray-500 mb-1">Phone (Cannot Change)</label>
                         <div className="w-full p-3 border rounded-lg bg-gray-100 text-gray-500">
                             {user.phone}
@@ -438,10 +610,15 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
     }
 
     if (view === 'chat') {
-        const partnerName = inboxItems.find(i => i.partnerId === activePartnerId)?.name || 'User';
+        const item = inboxItems.find(i => i.partnerId === activeChat?.partnerId && i.listingId === activeChat?.listingId);
+        const partnerName = item?.name || 'User';
+        const productName = item?.listingName || 'General';
+
         const chatMessages = messages.filter(m =>
-            (m.senderId === user.id && m.receiverId === activePartnerId) ||
-            (m.senderId === activePartnerId && m.receiverId === user.id)
+            ((m.senderId === user.id && m.receiverId === activeChat?.partnerId) ||
+                (m.senderId === activeChat?.partnerId && m.receiverId === user.id)) &&
+            // important: check listing ID match (handle nulls safely)
+            (m.listingId === activeChat?.listingId || (!m.listingId && !activeChat?.listingId))
         );
 
         return (
@@ -449,7 +626,10 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
                 <div className="bg-white p-4 shadow-sm flex items-center justify-between z-10">
                     <div className="flex items-center gap-2">
                         <button onClick={() => setView('home')}><ArrowLeft className="w-6 h-6 text-gray-600" /></button>
-                        <span className="font-bold text-lg">{partnerName}</span>
+                        <div>
+                            <span className="font-bold text-lg block">{partnerName}</span>
+                            {productName && <span className="text-xs text-gray-500">{productName}</span>}
+                        </div>
                     </div>
                     <a href={`tel:+910000000000`} className="bg-green-100 p-2 rounded-full text-green-700">
                         <Phone className="w-5 h-5" />
@@ -503,6 +683,7 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
     - To check for orders/messages, call check_inbox.
     - To read messages, call read_latest_messages.
     - To reply to a buyer, call send_reply with the message content.
+    - To update profile (name, location, language), call update_profile.
     Speak simply in ${user.language} or English mixed.
   `;
 
@@ -515,7 +696,7 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
                         <p className="opacity-90">{t('roleFarmer')}</p>
                     </div>
                     <div className="flex items-center gap-3">
-                        <button onClick={() => { setProfileData({ name: user.name }); setView('profile'); }} className="bg-white/20 p-2 rounded-full hover:bg-white/30">
+                        <button onClick={() => { setProfileData({ name: user.name, location: user.location || '', language: user.language }); setView('profile'); }} className="bg-white/20 p-2 rounded-full hover:bg-white/30">
                             <UserIcon className="w-6 h-6" />
                         </button>
                         <div className="bg-white/20 p-2 rounded-full">
@@ -550,12 +731,12 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
 
             <div className="p-4">
                 {activeTab === 'my_listings' ? (
-                    <div className="space-y-4">
+                    <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-6">
                         {myListings.length === 0 ? (
-                            <div className="text-center py-10 text-gray-500">{t('noListings')}</div>
+                            <div className="text-center py-10 text-gray-500 col-span-full">{t('noListings')}</div>
                         ) : (
                             myListings.map(listing => (
-                                <div key={listing.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 relative group">
+                                <div key={listing.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 relative group flex flex-col justify-between">
                                     <div className="flex justify-between items-start mb-2">
                                         <h3 className="text-lg font-bold text-gray-800">{listing.cropName}</h3>
                                         <div className="flex gap-2">
@@ -573,6 +754,20 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
                                         <span>₹{listing.price}/kg</span>
                                     </div>
                                     <p className="text-xs text-gray-400 mb-2">{listing.location}</p>
+                                    {(listing as any).image ? (
+                                        <div className="mb-2">
+                                            <img
+                                                src={(listing as any).image.startsWith('http') ? (listing as any).image : `http://localhost:5000${(listing as any).image}`}
+                                                alt="crop"
+                                                className="w-full h-32 md:h-48 object-cover rounded-md"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="mb-2 w-full h-32 md:h-48 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-md flex flex-col items-center justify-center text-emerald-300">
+                                            <span className="text-4xl">🌱</span>
+                                            <p className="text-xs font-medium mt-1 text-emerald-600">No Image</p>
+                                        </div>
+                                    )}
                                 </div>
                             ))
                         )}
@@ -580,7 +775,7 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
                         {/* Floating Add Button */}
                         <button
                             onClick={startCreate}
-                            className="fixed bottom-24 right-6 bg-emerald-600 text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center hover:bg-emerald-700 z-40"
+                            className="fixed bottom-28 right-6 bg-emerald-600 text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center hover:bg-emerald-700 z-40 transition-transform hover:scale-105"
                         >
                             <Plus className="w-8 h-8" />
                         </button>
@@ -592,19 +787,23 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
                                 <p>{t('noListings').replace('Listings', 'Messages') || "No messages"}</p>
                             </div>
                         ) : (
-                            inboxItems.map(item => (
-                                <div key={item.partnerId} onClick={() => openChat(item.partnerId)} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 cursor-pointer hover:bg-gray-50">
+                            inboxItems.map((item, idx) => (
+                                <div key={idx} onClick={() => openChat(item)} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 cursor-pointer hover:bg-gray-50">
                                     <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold uppercase">
                                         {item.name.charAt(0)}
                                     </div>
                                     <div className="flex-1">
-                                        <h4 className="font-bold text-gray-800">{item.name}</h4>
+                                        <div className="flex justify-between">
+                                            <h4 className="font-bold text-gray-800">{item.name}</h4>
+                                            {item.listingName && <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">{item.listingName}</span>}
+                                        </div>
                                         <p className="text-sm text-gray-500 truncate">{item.lastMsg}</p>
                                     </div>
                                     <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                                 </div>
                             ))
                         )}
+
                     </div>
                 )}
             </div>

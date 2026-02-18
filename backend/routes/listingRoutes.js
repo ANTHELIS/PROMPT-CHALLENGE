@@ -12,10 +12,26 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Create listing
-router.post('/', async (req, res) => {
+const { upload } = require('../middlewares/multer.middleware.js');
+const { uploadOnCloudinary } = require('../utils/cloudinary.js');
+
+// Create listing (with optional image)
+router.post('/', upload.single('image'), async (req, res) => {
   try {
-    const listing = await Listing.create(req.body);
+    const listingData = req.body;
+    let localFilePath = null;
+
+    if (req.file) {
+      localFilePath = req.file.path;
+      // Upload to Cloudinary
+      const result = await uploadOnCloudinary(localFilePath);
+      
+      if (result) {
+        listingData.image = result.secure_url;
+      }
+    }
+    
+    const listing = await Listing.create(listingData);
     res.status(201).json(listing);
   } catch (error) {
     res.status(400).json({ message: error.message });

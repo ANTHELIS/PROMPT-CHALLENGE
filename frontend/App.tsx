@@ -10,13 +10,21 @@ import { ShieldCheck, Phone } from 'lucide-react';
 import NameCollectionModal from './components/NameCollectionModal';
 
 const App: React.FC = () => {
-  // State
-  const [step, setStep] = useState<'lang' | 'role' | 'auth' | 'app'>('lang');
-  const [language, setLanguage] = useState<Language>('en');
-  const [role, setRole] = useState<'farmer' | 'buyer' | null>(null);
+  // Restore session from localStorage
+  const savedSession = (() => {
+    try {
+      const data = localStorage.getItem('bolmandi_session');
+      return data ? JSON.parse(data) : null;
+    } catch { return null; }
+  })();
+
+  // State — initialize from saved session if available
+  const [step, setStep] = useState<'lang' | 'role' | 'auth' | 'app'>(savedSession ? 'app' : 'lang');
+  const [language, setLanguage] = useState<Language>(savedSession?.language || 'en');
+  const [role, setRole] = useState<'farmer' | 'buyer' | null>(savedSession?.role || null);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(savedSession?.user || null);
   const [listings, setListings] = useState<CropListing[]>(MOCK_LISTINGS);
 
   // Handlers
@@ -58,7 +66,7 @@ const App: React.FC = () => {
             role,
             language,
             phone: phoneNumber,
-            location: 'Maharashtra'
+            location: ''
           });
         }
 
@@ -66,6 +74,13 @@ const App: React.FC = () => {
           // Map _id to id if necessary (api usually handles this but safety check)
           const userWithId = { ...loggedInUser, id: (loggedInUser as any)._id || loggedInUser.id };
           setUser(userWithId);
+
+          // Save session to localStorage
+          localStorage.setItem('bolmandi_session', JSON.stringify({
+            user: userWithId,
+            language,
+            role
+          }));
 
           // Load listings from server
           await loadListings();
@@ -79,6 +94,7 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('bolmandi_session');
     setUser(null);
     setRole(null);
     setPhoneNumber('');
@@ -87,12 +103,13 @@ const App: React.FC = () => {
     setListings([]);
   };
 
-  const handleAddListing = async (listing: Omit<CropListing, 'id'>) => {
+  const handleAddListing = async (listing: any) => {
     try {
       // Create on backend
       const newListing = await api.createListing(listing);
       setListings(prev => [newListing, ...prev]);
     } catch (e) {
+      console.error(e);
       alert("Failed to create listing");
     }
   };
@@ -122,6 +139,14 @@ const App: React.FC = () => {
       if (updatedUser) {
         const userWithId = { ...updatedUser, id: (updatedUser as any)._id || updatedUser.id };
         setUser(userWithId);
+        // Update saved session
+        localStorage.setItem('bolmandi_session', JSON.stringify({
+          user: userWithId,
+          language: userWithId.language || language,
+          role: userWithId.role || role
+        }));
+        // Reload listings to reflect potential name change in listings
+        await loadListings();
       }
     } catch (e) {
       alert("Failed to update profile");

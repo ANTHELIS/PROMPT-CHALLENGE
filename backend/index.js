@@ -1,12 +1,13 @@
 const express = require('express');
 const dotenv = require('dotenv');
+
+// Load environment variables from the root .env file
+dotenv.config();
+
 const cors = require('cors');
 const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
 const listingRoutes = require('./routes/listingRoutes');
-
-// Load environment variables from the root .env file
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -22,6 +23,7 @@ connectDB();
 app.use('/api/users', userRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/messages', require('./routes/messageRoutes'));
+app.use('/uploads', express.static('uploads'));
 
 app.get('/', (req, res) => {
   res.send('Multilingual Mandi API is running');

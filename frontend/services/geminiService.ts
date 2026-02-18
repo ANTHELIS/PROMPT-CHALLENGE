@@ -3,8 +3,7 @@ import { createPcmBlob, decodeAudio, decodeAudioData } from "../utils/audioUtils
 import { CropListing } from "../types";
 
 // Initialize Gemini Client
-// NOTE: In a real production app, ensure API_KEY is set securely.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 // --- Static Content Generation (Market Insights) ---
 

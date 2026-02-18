@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { User, CropListing, Message } from '../types';
 import { api } from '../api';
 import { translateText } from '../services/geminiService';
-import { TRANSLATIONS } from '../constants';
+import { TRANSLATIONS, LANGUAGES } from '../constants';
 import LiveAssistant from '../components/LiveAssistant';
 import { MapPin, MessageCircle, ArrowLeft, LogOut, Search, X, User as UserIcon } from 'lucide-react';
 import { FunctionDeclaration, Type } from '@google/genai';
@@ -29,7 +29,7 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
     });
 
     const [showProfile, setShowProfile] = useState(false);
-    const [profileData, setProfileData] = useState({ name: '' });
+    const [profileData, setProfileData] = useState({ name: '', location: '', language: 'en' as any });
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
 
     // Refs for Voice Assistant Context
@@ -49,6 +49,19 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
         messagesRef.current = messages;
     }, [messages]);
 
+    const systemInstruction = `
+    You are a helpful assistant for an Indian crop buyer on 'Bol Mandi'.
+    The user can speak in Hindi, Marathi, etc.
+    
+    CRITICAL INSTRUCTION FOR NAMES:
+    - The database stores Farmer Names in ENGLISH script (e.g., "Suresh", "Ramesh").
+    - If the user says a name in Hindi (e.g., "सुरेश"), you MUST transliterate it to English script ("Suresh") before calling the 'search_market' tool.
+    - Similarly for locations (e.g., "नासिक" -> "Nashik").
+    
+    Your goal is to help them find crops, filter by location/price/time, and negotiate with farmers.
+    Always be polite and keep answers concise.
+    `;
+
     const t = (key: keyof typeof TRANSLATIONS['en']) => {
         return TRANSLATIONS[user.language][key] || TRANSLATIONS['en'][key];
     };
@@ -63,7 +76,7 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
                 properties: {
                     query: { type: Type.STRING, description: "Crop name in English (e.g. Onion, Wheat)" },
                     location: { type: Type.STRING, description: "Filter by location (e.g. Nashik)" },
-                    farmerName: { type: Type.STRING, description: "Filter by farmer name" },
+                    farmerName: { type: Type.STRING, description: "Filter by farmer name. The user might say the name in their local language, but the database has English names. Transliterate if needed." },
                     minPrice: { type: Type.NUMBER, description: "Minimum price" },
                     maxPrice: { type: Type.NUMBER, description: "Maximum price" },
                     time: { type: Type.STRING, enum: ["newest", "today", "week", "all"], description: "Time filter: 'newest' (sorted), 'today' (last 24h), 'week' (last 7 days), 'all'." }
@@ -121,6 +134,19 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
             name: "go_back",
             description: "Exit the chat and go back to the marketplace feed.",
             parameters: { type: Type.OBJECT, properties: {} }
+        },
+        {
+            name: "update_profile",
+            description: "Update the user profile details like name, location, or language.",
+            parameters: {
+                type: Type.OBJECT,
+                properties: {
+                    name: { type: Type.STRING, description: "New name of the user" },
+                    location: { type: Type.STRING, description: "New location/city" },
+                    language: { type: Type.STRING, enum: ["en", "hi", "mr", "te", "ta", "bn"], description: "Language code" }
+                },
+                required: []
+            }
         }
     ];
 
@@ -285,6 +311,20 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
             return lastMsgs;
         }
 
+        if (name === "update_profile") {
+            const updates: any = {};
+            if (args.name) updates.name = args.name;
+            if (args.location) updates.location = args.location;
+            if (args.language) updates.language = args.language;
+
+            if (Object.keys(updates).length > 0) {
+                onUpdateUser(updates);
+                setProfileData(prev => ({ ...prev, ...updates }));
+                return "Profile updated successfully.";
+            }
+            return "No changes provided for profile.";
+        }
+
         return "Unknown tool";
     };
 
@@ -295,7 +335,7 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
         if (selectedListing) {
             const fetchMsgs = async () => {
                 // Get messages between me and the farmer
-                const msgs = await api.getMessages(user.id, selectedListing.farmerId);
+                const msgs = await api.getMessages(user.id, selectedListing.farmerId, selectedListing.id);
                 setMessages(msgs);
             };
             fetchMsgs();
@@ -331,7 +371,9 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
         if (activeFilters.query) {
             const q = activeFilters.query.toLowerCase();
             const match = l.cropName.toLowerCase().includes(q) ||
-                l.cropNameEnglish?.toLowerCase().includes(q);
+                l.cropNameEnglish?.toLowerCase().includes(q) ||
+                l.farmerName.toLowerCase().includes(q) ||
+                l.location.toLowerCase().includes(q);
             if (!match) return false;
         }
 
@@ -372,7 +414,11 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
     // View: Profile
     if (showProfile) {
         const saveProfile = () => {
-            onUpdateUser({ name: profileData.name });
+            onUpdateUser({
+                name: profileData.name,
+                location: profileData.location,
+                language: profileData.language
+            });
             setShowProfile(false);
         };
 
@@ -392,6 +438,30 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
                             onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
                             className="w-full p-3 border rounded-lg bg-gray-50 text-lg font-medium"
                         />
+                    </div>
+                    <div>
+                        <label className="block text-sm text-gray-500 mb-1">Location</label>
+                        <input
+                            type="text"
+                            value={profileData.location}
+                            onChange={(e) => setProfileData({ ...profileData, location: e.target.value })}
+                            className="w-full p-3 border rounded-lg bg-gray-50 text-lg font-medium"
+                            placeholder="e.g. Pune, Maharashtra"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm text-gray-500 mb-1">Language</label>
+                        <select
+                            value={profileData.language}
+                            onChange={(e) => setProfileData({ ...profileData, language: e.target.value as any })}
+                            className="w-full p-3 border rounded-lg bg-gray-50 text-lg font-medium"
+                        >
+                            {LANGUAGES.map(lang => (
+                                <option key={lang.code} value={lang.code}>
+                                    {lang.label} ({lang.nativeLabel})
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     <div>
                         <label className="block text-sm text-gray-500 mb-1">Phone (Cannot Change)</label>
@@ -480,10 +550,10 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
 
     // View: Marketplace Feed
     const feedInstruction = `
-    You are a buyer assistant for ${user.name} speaking ${user.language}.
+    ${systemInstruction}
     
     Current Visible Listings (Reference Context):
-    ${filteredListings.slice(0, 5).map((l, i) => `${i + 1}. [${l.farmerName}] selling ${l.cropName} for ₹${l.price}`).join('\n    ')}
+    ${filteredListings.slice(0, 5).map((l, i) => `${i + 1}. [${l.farmerName}] selling ${l.cropName} for ₹${l.price} in ${l.location}`).join('\n    ')}
 
     Universal Commands:
     - Use 'search_market' to find crops. ALWAYS convert search to English.
@@ -491,6 +561,7 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
       - IMPORTANT: If the user says "Message HIM", "Message THAT seller", or refers to a person by name from the Visible Listings above, pass the EXACT farmer name from the list.
       - If multiple sellers are visible but the user specifies a name, try to match the visible name.
     - Use 'sort_market' to filter/sort for best price.
+    - Use 'update_profile' to update name, location, or language.
   `;
 
     return (
@@ -503,7 +574,7 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
                     </div>
                     <div className="flex gap-2">
                         <button
-                            onClick={() => { setProfileData({ name: user.name }); setShowProfile(true); }}
+                            onClick={() => { setProfileData({ name: user.name, location: user.location || '', language: user.language }); setShowProfile(true); }}
                             className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
                             aria-label="Profile"
                         >
@@ -537,14 +608,14 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
                 </div>
             </header>
 
-            <div className="p-4 grid gap-4">
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredListings.length === 0 ? (
                     <div className="text-center py-12 text-gray-500">
                         No crops found matching your criteria.
                     </div>
                 ) : (
                     filteredListings.map(listing => (
-                        <div key={listing.id} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 transition-all hover:shadow-md">
+                        <div key={listing.id} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 transition-all hover:shadow-md flex flex-col justify-between">
                             <div className="flex justify-between items-start mb-2">
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-900">{listing.cropName}</h3>
@@ -558,6 +629,20 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
                             </div>
 
                             <p className="text-gray-600 text-sm mb-4 line-clamp-2">{listing.description}</p>
+                            {(listing as any).image ? (
+                                <div className="mb-4">
+                                    <img
+                                        src={(listing as any).image.startsWith('http') ? (listing as any).image : `http://localhost:5000${(listing as any).image}`}
+                                        alt="crop"
+                                        className="w-full h-40 md:h-56 object-cover rounded-xl"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="mb-4 w-full h-40 md:h-56 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex flex-col items-center justify-center text-gray-300">
+                                    <span className="text-5xl">🌾</span>
+                                    <p className="text-sm font-medium mt-2 text-gray-500">No Preview</p>
+                                </div>
+                            )}
 
                             <div className="flex justify-between items-center pt-3 border-t border-gray-100">
                                 <div>

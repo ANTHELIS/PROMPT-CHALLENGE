@@ -76,12 +76,12 @@ export const api = {
         }
     },
 
-    createListing: async (listing: Omit<CropListing, 'id'>): Promise<CropListing> => {
+    createListing: async (listing: FormData): Promise<CropListing> => {
         try {
             const response = await fetch(`${API_BASE_URL}/listings`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(listing),
+                // Content-Type is set automatically for FormData
+                body: listing,
             });
             if (!response.ok) throw new Error('Failed to create listing');
             const data = await response.json();
