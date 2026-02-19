@@ -89,6 +89,16 @@ The platform features a deeply integrated, real-time voice assistant powered by 
 *   **Real-time Chat Translation**: Messages are automatically translated between the Farmer's and Buyer's preferred languages.
 *   **Audio-First Interface**: Designed for accessibility, allowing full platform control through voice commands.
 
+## ✨ Premium UI/UX Experience
+*   **Immersive Dark Mode** 🌙:
+    *   Full dark theme support across all dashboards and components.
+    *   **Circular Reveal Animation**: A cinematic, expanding circle effect when toggling themes.
+    *   System preference detection with persistent settings.
+*   **Visual Delight**:
+    *   **Glassmorphism**: Modern, translucent UI elements with blur effects.
+    *   **Micro-interactions**: Hover lifts, glow effects, and smooth button presses.
+    *   **Dynamic Transitions**: Seamless color morphing for a polished feel.
+
 
 # System Architecture: Multilingual Mandi
 

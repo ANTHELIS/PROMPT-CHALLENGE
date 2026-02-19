@@ -52,8 +52,8 @@ const BuyerDashboard: React.FC<Props> = ({ user, listings, onLogout, onUpdateUse
     }, [messages]);
 
     const systemInstruction = `
-    You are a helpful assistant for an Indian crop buyer on 'Bol Mandi'.
-    The user can speak in Hindi, Marathi, etc.
+    You are a helpful assistant for an Indian crop buyer on 'SpeakHarvest'.
+    Your goal is to help the buyer find crops, filter listings, and negotiate with farmers.
     
     CRITICAL INSTRUCTION FOR NAMES:
     - The database stores Farmer Names in ENGLISH script (e.g., "Suresh", "Ramesh").

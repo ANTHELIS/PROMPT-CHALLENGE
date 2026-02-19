@@ -13,7 +13,7 @@ const App: React.FC = () => {
   // Restore session from localStorage
   const savedSession = (() => {
     try {
-      const data = localStorage.getItem('bolmandi_session');
+      const data = localStorage.getItem('speakharvest_session');
       return data ? JSON.parse(data) : null;
     } catch { return null; }
   })();
@@ -76,7 +76,7 @@ const App: React.FC = () => {
           setUser(userWithId);
 
           // Save session to localStorage
-          localStorage.setItem('bolmandi_session', JSON.stringify({
+          localStorage.setItem('speakharvest_session', JSON.stringify({
             user: userWithId,
             language,
             role
@@ -94,7 +94,7 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('bolmandi_session');
+    localStorage.removeItem('speakharvest_session');
     setUser(null);
     setRole(null);
     setPhoneNumber('');
@@ -140,7 +140,7 @@ const App: React.FC = () => {
         const userWithId = { ...updatedUser, id: (updatedUser as any)._id || updatedUser.id };
         setUser(userWithId);
         // Update saved session
-        localStorage.setItem('bolmandi_session', JSON.stringify({
+        localStorage.setItem('speakharvest_session', JSON.stringify({
           user: userWithId,
           language: userWithId.language || language,
           role: userWithId.role || role

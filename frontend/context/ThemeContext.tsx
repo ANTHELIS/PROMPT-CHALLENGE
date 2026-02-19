@@ -11,7 +11,7 @@ export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isDark, setIsDark] = useState(() => {
-        const saved = localStorage.getItem('bolmandi_theme');
+        const saved = localStorage.getItem('speakharvest_theme');
         if (saved) return saved === 'dark';
         return window.matchMedia('(prefers-color-scheme: dark)').matches;
     });
@@ -26,7 +26,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         } else {
             root.classList.remove('dark');
         }
-        localStorage.setItem('bolmandi_theme', isDark ? 'dark' : 'light');
+        localStorage.setItem('speakharvest_theme', isDark ? 'dark' : 'light');
     }, [isDark]);
 
     const toggleTheme = useCallback((x?: number, y?: number) => {
