@@ -34,6 +34,7 @@ router.post('/', upload.single('image'), async (req, res) => {
     const listing = await Listing.create(listingData);
     res.status(201).json(listing);
   } catch (error) {
+    console.error('❌ Create listing error:', error.message, error.stack);
     res.status(400).json({ message: error.message });
   }
 });

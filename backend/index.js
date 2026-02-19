@@ -12,8 +12,14 @@ const listingRoutes = require('./routes/listingRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
+// CORS — allow all origins (required for Vercel → Render cross-origin requests)
+const corsOptions = {
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle preflight for all routes
 app.use(express.json());
 
 // Database Connection
@@ -26,7 +32,7 @@ app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/uploads', express.static('uploads'));
 
 app.get('/', (req, res) => {
-  res.send('Multilingual Mandi API is running');
+  res.send('SpeakHarvest API is running ✅');
 });
 
 app.listen(PORT, () => {
