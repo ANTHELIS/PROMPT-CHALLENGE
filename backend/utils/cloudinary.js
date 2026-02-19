@@ -17,7 +17,10 @@ const uploadOnCloudinary = async (localFilePath)=>{
         fs.unlinkSync(localFilePath);
         return uploadDetails;
     } catch (error) {
-        fs.unlinkSync(localFilePath);
+        // Safely remove temp file if it exists, to avoid secondary ENOENT crash
+        if (localFilePath && fs.existsSync(localFilePath)) {
+            fs.unlinkSync(localFilePath);
+        }
         return null;
     }
 }
