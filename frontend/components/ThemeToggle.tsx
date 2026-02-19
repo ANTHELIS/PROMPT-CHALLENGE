@@ -26,12 +26,14 @@ const ThemeToggle: React.FC = () => {
             aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
             <div className="relative w-5 h-5">
+                {/* Sun: shown in dark mode → click to go light */}
                 <Sun
-                    className={`w-5 h-5 text-amber-500 absolute inset-0 transition-all duration-500 ${isDark ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'
+                    className={`w-5 h-5 text-amber-500 absolute inset-0 transition-all duration-500 ${isDark ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-90 scale-0'
                         }`}
                 />
+                {/* Moon: shown in light mode → click to go dark */}
                 <Moon
-                    className={`w-5 h-5 text-blue-400 absolute inset-0 transition-all duration-500 ${isDark ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'
+                    className={`w-5 h-5 text-blue-400 absolute inset-0 transition-all duration-500 ${isDark ? 'opacity-0 -rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'
                         }`}
                 />
             </div>
