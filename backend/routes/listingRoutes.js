@@ -19,18 +19,15 @@ const { uploadOnCloudinary } = require('../utils/cloudinary.js');
 router.post('/', upload.single('image'), async (req, res) => {
   try {
     const listingData = req.body;
-    let localFilePath = null;
 
     if (req.file) {
-      localFilePath = req.file.path;
-      // Upload to Cloudinary
-      const result = await uploadOnCloudinary(localFilePath);
-      
+      // Upload buffer directly to Cloudinary (no disk write needed)
+      const result = await uploadOnCloudinary(req.file.buffer, req.file.mimetype);
       if (result) {
         listingData.image = result.secure_url;
       }
     }
-    
+
     const listing = await Listing.create(listingData);
     res.status(201).json(listing);
   } catch (error) {
