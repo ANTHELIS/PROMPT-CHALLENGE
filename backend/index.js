@@ -19,7 +19,6 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Handle preflight for all routes
 app.use(express.json());
 
 // Database Connection
