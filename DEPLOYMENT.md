@@ -21,7 +21,10 @@ git push origin main
 5.  **Environment Variables** (Scroll down to "Advanced" or "Environment"):
     *   Key: `MONGO_URI`
     *   Value: `your_mongodb_connection_string` (Use a MongoDB Atlas URI, not localhost)
-    *   Key: `GEMINI_API_KEY` (If backend needs it)
+    *   Key: `CLOUDINARY_CLOUD_NAME`
+    *   Key: `CLOUDINARY_API_KEY`
+    *   Key: `CLOUDINARY_API_SECRET`
+    *   Values: Your Cloudinary Dashboard API details (Required for photo uploads)
 6.  Click **Create Web Service**.
 7.  Copy the provided URL (e.g., `https://mandi-backend.onrender.com`). You will need this for the frontend.
 
@@ -44,7 +47,7 @@ git push origin main
 Your frontend `api.ts` (or similar) currently likely points to `http://localhost:5000`. You need to ensure it points to your deployed Render Backend URL in production.
 
 **Action Required**:
-Check `frontend/api.ts` (or `constants.ts`) and ensure the base URL uses an environment variable, like:
+Check `frontend/src/api.ts` (or `constants.ts`) and ensure the base URL uses an environment variable, like:
 ```typescript
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 ```

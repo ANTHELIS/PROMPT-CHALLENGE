@@ -4,7 +4,7 @@ import { api } from '../api';
 import { getMarketInsight, translateText } from '../services/geminiService';
 import LiveAssistant from '../components/LiveAssistant';
 import { TRANSLATIONS } from '../constants';
-import { Sprout, TrendingUp, Edit2, MessageCircle, Phone, ArrowLeft, Plus, Trash2, LogOut, User as UserIcon, Camera, X } from 'lucide-react';
+import { MapPin, Sprout, TrendingUp, Edit2, MessageCircle, Phone, ArrowLeft, Plus, Trash2, LogOut, User as UserIcon, Camera, X } from 'lucide-react';
 import LanguageDropdown from '../components/LanguageDropdown';
 import ThemeToggle from '../components/ThemeToggle';
 import { FunctionDeclaration, Type } from '@google/genai';
@@ -19,6 +19,31 @@ interface Props {
     onUpdateUser: (updates: Partial<User>) => void;
     onLogout: () => void;
 }
+
+const formatMessageTime = (timestamp?: number | string | Date) => {
+    if (!timestamp) return '';
+    const d = new Date(timestamp);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+};
+
+const formatMessageDate = (timestamp?: number | string | Date) => {
+    if (!timestamp) return '';
+    const d = new Date(timestamp);
+    if (isNaN(d.getTime())) return '';
+
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (d.toDateString() === today.toDateString()) {
+        return 'Today';
+    } else if (d.toDateString() === yesterday.toDateString()) {
+        return 'Yesterday';
+    } else {
+        return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+};
 
 const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpdateListing, onDeleteListing, onUpdateUser, onLogout }) => {
     const [view, setView] = useState<'home' | 'create' | 'edit' | 'chat' | 'profile'>('home');
@@ -48,7 +73,7 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
         'लसूण': 'Garlic', 'आले': 'Ginger', 'हिरवी मिरची': 'Green Chili',
         'मुळा': 'Radish',
     };
-    const [inboxItems, setInboxItems] = useState<{ partnerId: string, listingId?: string, listingName?: string, name: string, lastMsg: string }[]>([]);
+    const [inboxItems, setInboxItems] = useState<{ partnerId: string, listingId?: string, listingName?: string, listingQuantity?: number, listingPrice?: number, name: string, lastMsg: string }[]>([]);
     const [activeChat, setActiveChat] = useState<{ partnerId: string, listingId?: string } | null>(null);
     const [profileData, setProfileData] = useState({ name: '', location: '', language: 'en' as any });
 
@@ -82,7 +107,7 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
     useEffect(() => {
         const processInbox = async () => {
             // Group by Key: partnerId_listingId
-            const threads = new Map<string, { partnerId: string, listingId?: string, listingName?: string, name: string, lastMsg: string, timestamp: number }>();
+            const threads = new Map<string, { partnerId: string, listingId?: string, listingName?: string, listingQuantity?: number, listingPrice?: number, name: string, lastMsg: string, timestamp: number }>();
 
             for (const m of messages) {
                 const partnerId = m.senderId === user.id ? m.receiverId : m.senderId;
@@ -94,15 +119,23 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
                 if (!threads.has(key)) {
                     // Initial info (will refine name later)
                     let listingName = 'General';
+                    let listingQuantity: number | undefined;
+                    let listingPrice: number | undefined;
                     if (m.listingId) {
                         const l = listings.find(lst => lst.id === m.listingId);
-                        if (l) listingName = l.cropName;
+                        if (l) {
+                            listingName = l.cropName;
+                            listingQuantity = l.quantity;
+                            listingPrice = l.price;
+                        }
                     }
 
                     threads.set(key, {
                         partnerId,
                         listingId: m.listingId,
                         listingName,
+                        listingQuantity,
+                        listingPrice,
                         name: partnerId, // temp
                         lastMsg: m.text,
                         timestamp: m.timestamp
@@ -195,11 +228,26 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
         },
         {
             name: 'check_inbox',
-            description: 'Check messages. Returns sender and product name for each conversation.',
+            description: 'Check messages. Returns sender, product name, quantity, and price for each conversation.',
             parameters: {
                 type: Type.OBJECT,
                 properties: {},
             }
+        },
+        {
+            name: 'open_inbox',
+            description: 'Open the user\'s inbox section to see all their conversations. Call this if the user says "inbox", "messages", "संदेश", "माझे संदेश", "निरोप", etc.',
+            parameters: { type: Type.OBJECT, properties: {} }
+        },
+        {
+            name: 'open_market',
+            description: 'Open the main dashboard to view all listed crops and current market prices. Call this if the user says "market", "my listings", "माझे पीक", "फसल", "होम", etc.',
+            parameters: { type: Type.OBJECT, properties: {} }
+        },
+        {
+            name: 'go_back',
+            description: 'Exit the current screen or chat and go back to the main dashbaord view.',
+            parameters: { type: Type.OBJECT, properties: {} }
         },
         {
             name: 'find_conversation_by_product',
@@ -214,7 +262,7 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
         },
         {
             name: 'read_latest_messages',
-            description: 'Read the actual content of the messages from the buyer.',
+            description: 'Read the actual content of the recent messages in a conversation. Return the type (sent or received) and the text of the message.',
             parameters: {
                 type: Type.OBJECT,
                 properties: {},
@@ -222,11 +270,13 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
         },
         {
             name: 'send_reply',
-            description: 'Send a message reply to the buyer.',
+            description: 'Send a message reply to the buyer. You can specify who to send it to if known.',
             parameters: {
                 type: Type.OBJECT,
                 properties: {
-                    message: { type: Type.STRING, description: "The message content to send" }
+                    message: { type: Type.STRING, description: "The message content to send" },
+                    recipientName: { type: Type.STRING, description: "Optional. Name of the person to send the message to" },
+                    cropName: { type: Type.STRING, description: "Optional crop name if there are multiple conversations with this person" }
                 },
                 required: ['message']
             }
@@ -303,7 +353,7 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
 
         if (name === 'check_inbox') {
             if (inboxItems.length === 0) return "Inbox is empty.";
-            return JSON.stringify(inboxItems.map(i => ({ from: i.name, product: i.listingName, lastParams: i.lastMsg })));
+            return JSON.stringify(inboxItems.map(i => ({ from: i.name, product: i.listingName, qty: i.listingQuantity, price: i.listingPrice, lastParams: i.lastMsg })));
         }
 
         if (name === 'find_conversation_by_product') {
@@ -311,34 +361,88 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
                 i.listingName?.toLowerCase().includes(args.cropName.toLowerCase())
             );
             if (matches.length === 0) return `No conversations found for ${args.cropName}.`;
-            return `Found ${matches.length} conversations for ${args.cropName}. From: ${matches.map(m => m.name).join(', ')}.`;
+            return `Found ${matches.length} conversations for ${args.cropName}. Details: ${matches.map(m => `From ${m.name} for ${m.listingQuantity}kg at ₹${m.listingPrice}/kg`).join(', ')}.`;
         }
 
         if (name === 'read_latest_messages') {
-            const incoming = messagesRef.current.filter(m => m.senderId !== user.id).slice(-3); // Get last 3
-            if (incoming.length === 0) return "No incoming messages.";
-            return JSON.stringify(incoming.map(m => ({ from: m.senderId, text: m.text })));
+            let contextMessages = messagesRef.current;
+            if (activeChat) {
+                // If a chat is open, only read messages from that specific conversation
+                contextMessages = contextMessages.filter(m =>
+                    (m.senderId === activeChat.partnerId || m.receiverId === activeChat.partnerId) &&
+                    (m.listingId === activeChat.listingId || (!m.listingId && !activeChat.listingId))
+                );
+            }
+
+            const recentMessages = contextMessages.slice(-5); // Get last 5 messages
+            if (recentMessages.length === 0) return "No messages found in this conversation.";
+
+            return JSON.stringify(recentMessages.map(m => ({
+                type: m.senderId === user.id ? 'sent' : 'received',
+                from: m.senderId,
+                text: m.text
+            })));
         }
 
         if (name === 'send_reply') {
-            if (!activeChat) return "Please open a chat first or specify which conversation to reply to.";
-            const receiverId = activeChat.partnerId;
-            const listingId = activeChat.listingId;
+            let receiverId = activeChat?.partnerId;
+            let listingId = activeChat?.listingId;
+            let finalName = receiverId;
+
+            if (args.recipientName) {
+                const possible = inboxItems.filter(i =>
+                    i.name.toLowerCase().includes(args.recipientName.toLowerCase())
+                );
+
+                if (possible.length === 0) {
+                    return `Could not find a conversation with ${args.recipientName}.`;
+                }
+
+                let match = possible[0];
+                if (args.cropName && possible.length > 1) {
+                    const exact = possible.find(i => i.listingName?.toLowerCase().includes(args.cropName.toLowerCase()));
+                    if (exact) match = exact;
+                }
+
+                receiverId = match.partnerId;
+                listingId = match.listingId;
+                finalName = match.name;
+            } else if (activeChat) {
+                const match = inboxItems.find(i => i.partnerId === receiverId && i.listingId === listingId);
+                if (match) finalName = match.name;
+            } else {
+                return "Please specify who you want to send the message to, or open a chat first.";
+            }
+
+            if (!receiverId) return "Invalid recipient.";
 
             try {
                 await api.sendMessage({
                     senderId: user.id,
-                    receiverId,
+                    receiverId: receiverId,
                     listingId,
                     text: args.message,
                     timestamp: Date.now()
                 });
-                // We rely on polling to show it in the list, or optionallyoptimistically add it
-                return "Message sent to Manoj.";
+                return `Message sent to ${finalName}.`;
             } catch (e) {
                 return "Failed to send message.";
             }
+        }
 
+        if (name === 'open_inbox') {
+            setView('home');
+            setActiveTab('inbox');
+            return "Opened the inbox section.";
+        }
+
+        if (name === 'open_market' || name === 'go_back') {
+            setView('home');
+            setActiveChat(null);
+            setEditingId(null);
+            setFormState({});
+            setActiveTab('my_listings');
+            return "Returned to your crop listings and market dashboard.";
         }
 
         if (name === 'update_profile') {
@@ -666,13 +770,35 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
                     {chatMessages.length === 0 ? (
                         <div className="text-center text-gray-400 dark:text-gray-500 mt-10">No messages yet. Say Namaste!</div>
                     ) : (
-                        chatMessages.map(m => (
-                            <div key={m.id} className={`flex ${m.senderId === user.id ? 'justify-end msg-out' : 'justify-start msg-in'}`}>
-                                <div className={`max-w-[80%] p-3 rounded-xl ${m.senderId === user.id ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-gray-800 border dark:border-gray-700 text-gray-800 dark:text-gray-200'}`}>
-                                    {m.text}
-                                </div>
-                            </div>
-                        ))
+                        (() => {
+                            let lastDateStr = '';
+                            return chatMessages.map(m => {
+                                const isMe = m.senderId === user.id;
+                                const currentDateStr = formatMessageDate(m.timestamp);
+                                const showDate = currentDateStr !== lastDateStr;
+                                if (showDate) lastDateStr = currentDateStr;
+
+                                return (
+                                    <React.Fragment key={m.id}>
+                                        {showDate && (
+                                            <div className="flex justify-center my-4">
+                                                <div className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-3 py-1 rounded-full shadow-sm">
+                                                    {currentDateStr}
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className={`flex ${isMe ? 'justify-end msg-out' : 'justify-start msg-in'} mb-4`}>
+                                            <div className={`max-w-[80%] p-3 rounded-xl flex flex-col ${isMe ? 'bg-emerald-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-800 border dark:border-gray-700 text-gray-800 dark:text-gray-200 rounded-bl-none'}`}>
+                                                <p>{m.text}</p>
+                                                <div className={`text-[10px] mt-1 pr-1 self-end ${isMe ? 'text-emerald-100' : 'text-gray-400 dark:text-gray-500'}`}>
+                                                    {formatMessageTime(m.timestamp)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </React.Fragment>
+                                );
+                            });
+                        })()
                     )}
                 </div>
 
@@ -689,7 +815,11 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
                 </div>
 
                 <LiveAssistant
-                    systemInstruction="Help the farmer reply."
+                    systemInstruction={`Help the farmer reply to messages.
+Use 'send_reply' to send messages.
+Use 'go_back' or 'open_market' to return to their listings.
+Use 'open_inbox' to go back to the inbox view.
+Use 'read_latest_messages' to read history.`}
                     tools={tools}
                     onToolCall={handleToolCall}
                 />
@@ -706,10 +836,12 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
     - To remove a crop, call delete_listing.
     - To change price/quantity, call update_listing.
     - To summarize inventory, call get_my_listings.
-    - To check for orders/messages, call check_inbox.
+    - To check for orders/messages data, call check_inbox. 
+    - To OPEN the inbox tab, call open_inbox (User might say "इनबॉक्स", "संदेश", "निरोप" in their local language).
     - To read messages, call read_latest_messages.
-    - To reply to a buyer, call send_reply with the message content.
+    - To reply to a buyer, call send_reply with the message content. You can specify the recipient's name from anywhere.
     - To update profile (name, location, language), call update_profile.
+    - To OPEN the listings/home page, call open_market or go_back (User might say "मार्केट", "माझे पीक", "फसल", "होम").
     Speak simply in ${user.language} or English mixed.
   `;
 
@@ -780,7 +912,16 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
                                         <span>•</span>
                                         <span>₹{listing.price}/kg</span>
                                     </div>
-                                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">{listing.location}</p>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                            <MapPin className="w-3 h-3" /> {listing.location}
+                                        </p>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                                            {formatMessageDate(listing.timestamp)
+                                                ? `${formatMessageDate(listing.timestamp)} ${formatMessageTime(listing.timestamp)}`
+                                                : ''}
+                                        </p>
+                                    </div>
                                     {(listing as any).image ? (
                                         <div className="mb-2">
                                             <img
@@ -822,7 +963,12 @@ const FarmerDashboard: React.FC<Props> = ({ user, listings, onAddListing, onUpda
                                     <div className="flex-1">
                                         <div className="flex justify-between">
                                             <h4 className="font-bold text-gray-800 dark:text-gray-100">{item.name}</h4>
-                                            {item.listingName && <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-full">{item.listingName}</span>}
+                                            {item.listingName && (
+                                                <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-full">
+                                                    {item.listingName}
+                                                    {item.listingQuantity !== undefined && item.listingPrice !== undefined ? ` • ${item.listingQuantity}kg • ₹${item.listingPrice}/kg` : ''}
+                                                </span>
+                                            )}
                                         </div>
                                         <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{item.lastMsg}</p>
                                     </div>

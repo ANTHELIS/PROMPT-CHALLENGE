@@ -69,7 +69,7 @@ export const api = {
             if (!response.ok) throw new Error('Failed to fetch listings');
             // Map MongoDB _id to id for frontend compatibility
             const data = await response.json();
-            return data.map((item: any) => ({ ...item, id: item._id }));
+            return data.map((item: any) => ({ ...item, id: item._id, timestamp: new Date(item.createdAt).getTime() || Date.now() }));
         } catch (error) {
             console.error('Get listings error:', error);
             return [];
@@ -85,7 +85,7 @@ export const api = {
             });
             if (!response.ok) throw new Error('Failed to create listing');
             const data = await response.json();
-            return { ...data, id: data._id };
+            return { ...data, id: data._id, timestamp: new Date(data.createdAt).getTime() || Date.now() };
         } catch (error) {
             console.error('Create listing error:', error);
             throw error;
@@ -136,7 +136,7 @@ export const api = {
             });
             if (!response.ok) throw new Error('Failed to update listing');
             const data = await response.json();
-            return { ...data, id: data._id };
+            return { ...data, id: data._id, timestamp: new Date(data.createdAt).getTime() || Date.now() };
         } catch (error) {
             console.error('Update listing error:', error);
             throw error;

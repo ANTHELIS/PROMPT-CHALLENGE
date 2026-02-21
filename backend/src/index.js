@@ -12,6 +12,25 @@ const listingRoutes = require('./routes/listingRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+
+// Basic Security Headers
+app.use(helmet());
+app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
+
+// Rate Limiting to prevent brute-force and DDoS
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // limit each IP to 1000 requests per windowMs
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+app.use('/api/', apiLimiter);
+
+// Prevent NoSQL Injection attacks
+app.use(mongoSanitize());
+
 // CORS — allow all origins (required for Vercel → Render cross-origin requests)
 const corsOptions = {
   origin: '*',
@@ -19,7 +38,9 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 app.use(cors(corsOptions));
-app.use(express.json());
+// Limit body payload to prevent DOS attacks
+app.use(express.json({ limit: '50kb' }));
+app.use(express.urlencoded({ extended: true, limit: '50kb' }));
 
 // Database Connection
 connectDB();

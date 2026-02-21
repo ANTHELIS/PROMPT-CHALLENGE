@@ -99,6 +99,12 @@ The platform features a deeply integrated, real-time voice assistant powered by 
     *   **Micro-interactions**: Hover lifts, glow effects, and smooth button presses.
     *   **Dynamic Transitions**: Seamless color morphing for a polished feel.
 
+## 🔒 Enterprise Security
+*   **DDoS Protection**: Integrated `express-rate-limit` prevents brute-forcing and bot swarms.
+*   **NoSQL Defense**: `express-mongo-sanitize` proactively scrubs incoming objects to stop injection attacks.
+*   **Header Armor**: `helmet` guards against XSS, clickjacking, and MIME-sniffing exploits.
+*   **Payload Limits**: Strict 50kb caps on JSON body parsers prevent remote memory-exhaustion (DOS) attacks.
+
 
 # System Architecture: Multilingual Mandi
 
@@ -135,7 +141,7 @@ graph TD
 
     subgraph Backend [Backend Server - Node.js/Express]
         direction TB
-        Server_Entry[index.js<br/>App Entry Point]
+        Server_Entry[src/index.js<br/>App Entry Point]
         Auth_Route[User Routes<br/>/api/users]
         Listing_Route[Listing Routes<br/>/api/listings]
         Message_Route[Message Routes<br/>/api/messages]
@@ -190,14 +196,14 @@ graph TD
 - **Framework**: React 19 with Vite.
 - **Language**: TypeScript.
 - **Key Files**:
-    - `App.tsx`: Main application controller handling routing (Language -> Role -> Auth -> Dashboard).
-    - `api.ts`: Centralizes all backend API calls (Login, Listings, Messages).
-    - `services/geminiService.ts`: Checkpoints for Google GenAI integration (Market insights, Translation, Live Audio).
+    - `src/App.tsx`: Main application controller handling routing (Language -> Role -> Auth -> Dashboard).
+    - `src/api.ts`: Centralizes all backend API calls (Login, Listings, Messages).
+    - `src/services/geminiService.ts`: Checkpoints for Google GenAI integration (Market insights, Translation, Live Audio).
 
 ### 2. Backend (Server)
 - **Runtime**: Node.js.
 - **Framework**: Express.js.
-- **Main Entry**: `backend/index.js`.
+- **Main Entry**: `backend/src/index.js`.
 - **API Routes**:
     - `POST /api/users/login`: Handles user authentication and creation.
     - `GET/POST /api/listings`: Manages crop listings (CRUD).
