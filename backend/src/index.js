@@ -21,6 +21,7 @@ app.use(helmet());
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 
 // Rate Limiting to prevent brute-force and DDoS
+app.set('trust proxy', 1); // Trust the first proxy (e.g. Render)
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000, // limit each IP to 1000 requests per windowMs
@@ -28,8 +29,7 @@ const apiLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 
-// Prevent NoSQL Injection attacks
-app.use(mongoSanitize());
+
 
 // CORS — allow all origins (required for Vercel → Render cross-origin requests)
 const corsOptions = {
@@ -41,6 +41,9 @@ app.use(cors(corsOptions));
 // Limit body payload to prevent DOS attacks
 app.use(express.json({ limit: '50kb' }));
 app.use(express.urlencoded({ extended: true, limit: '50kb' }));
+
+// Prevent NoSQL Injection attacks (MUST be placed after body-parser / express.json)
+app.use(mongoSanitize());
 
 // Database Connection
 connectDB();
