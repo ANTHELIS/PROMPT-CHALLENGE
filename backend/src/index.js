@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 5000;
 
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const mongoSanitize = require('express-mongo-sanitize');
+const sanitize = require('mongo-sanitize');
 
 // Basic Security Headers
 app.use(helmet());
@@ -43,7 +43,12 @@ app.use(express.json({ limit: '50kb' }));
 app.use(express.urlencoded({ extended: true, limit: '50kb' }));
 
 // Prevent NoSQL Injection attacks (MUST be placed after body-parser / express.json)
-app.use(mongoSanitize());
+app.use((req, res, next) => {
+  if (req.body) req.body = sanitize(req.body);
+  if (req.params) req.params = sanitize(req.params);
+  if (req.query) req.query = sanitize(req.query);
+  next();
+});
 
 // Database Connection
 connectDB();
