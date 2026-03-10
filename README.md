@@ -106,13 +106,13 @@ The platform features a deeply integrated, real-time voice assistant powered by 
 *   **Payload Limits**: Strict 50kb caps on JSON body parsers prevent remote memory-exhaustion (DOS) attacks.
 
 
-# System Architecture: Multilingual Mandi
+# System Architecture: SpeakHarvest
 
 This document provides a high-level overview of the system architecture for specific use by the hackathon organization team and developers.
 
 ## System Overview
 
-The **Multilingual Mandi** is a web-based platform bridging Farmers and Buyers. It uses a modern **React** frontend for the user interface, a **Node.js/Express** backend for business logic, **MongoDB** for data persistence, and **Google Gemini AI** for real-time translation and market insights.
+**SpeakHarvest** is a web-based platform bridging Farmers and Buyers. It uses a modern **React** frontend for the user interface, a **Node.js/Express** backend for business logic, **MongoDB** for data persistence, and **Google Gemini AI** for real-time translation and market insights.
 
 ```mermaid
 graph TD

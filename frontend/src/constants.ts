@@ -67,7 +67,7 @@ export const TRANSLATIONS = {
     voicePromptCreate: "I want to sell 500kg of Onions...",
     voicePromptEdit: "Change price to 30...",
     findCrops: "Find fresh crops directly from farmers",
-    mandiTitle: "Mandi Marketplace",
+    mandiTitle: "SpeakHarvest Marketplace",
     negotiationTitle: "Negotiation",
     typeMessage: "Type a message...",
     send: "Send",

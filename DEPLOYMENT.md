@@ -13,7 +13,7 @@ git push origin main
 2.  Click **New +** -> **Web Service**.
 3.  Connect your GitHub repository.
 4.  Reflect the following settings:
-    *   **Name**: `multilingual-mandi-backend` (or similar)
+    *   **Name**: `speakharvest-backend` (or similar)
     *   **Root Directory**: `backend` (Important!)
     *   **Runtime**: Node
     *   **Build Command**: `npm install`
@@ -26,7 +26,7 @@ git push origin main
     *   Key: `CLOUDINARY_API_SECRET`
     *   Values: Your Cloudinary Dashboard API details (Required for photo uploads)
 6.  Click **Create Web Service**.
-7.  Copy the provided URL (e.g., `https://mandi-backend.onrender.com`). You will need this for the frontend.
+7.  Copy the provided URL (e.g., `https://speakharvest-backend.onrender.com`). You will need this for the frontend.
 
 ## 3. Frontend Deployment (Vercel)
 
